@@ -1,13 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+	font-family: 'Pretendard-Thin';
+	font-weight: 100;
+	src: url('./fonts/Pretendard-Thin.woff') format('woff');
+}
+@font-face {
+	font-family: 'Pretendard-ExtraLight';
+	font-weight: 200;
+	src: url('./fonts/Pretendard-ExtraLight.woff') format('woff');
+}
+@font-face {
+	font-family: 'Pretendard-Light';
+	font-weight: 300;
+	src: url('./fonts/Pretendard-Light.woff') format('woff');
+}
+@font-face {
+	font-family: 'Pretendard-Regular';
+	font-weight: 400;
+	src: url('./fonts/Pretendard-Regular.woff') format('woff');
+}
+@font-face {
+	font-family: 'Pretendard-Medium';
+	font-weight: 500;
+	src: url('./fonts/Pretendard-Medium.woff') format('woff');
+}
+@font-face {
+	font-family: 'Pretendard-SemiBold';
+	font-weight: 600;
+	src: url('./fonts/Pretendard-SemiBold.woff') format('woff');
+}
+@font-face {
+	font-family: 'Pretendard-Bold';
+	font-weight: 700;
+	src: url('./fonts/Pretendard-Bold.woff') format('woff');
+}
+@font-face {
+	font-family: 'Pretendard-ExtraBold';
+	font-weight: 800;
+	src: url('./fonts/Pretendard-ExtraBold.woff') format('woff');
+}
+@font-face {
+	font-family: 'Pretendard-Black';
+	font-weight: 900;
+	src: url('./fonts/Pretendard-Black.woff') format('woff');
+}
+
 body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+	margin: 0;
+	font-family: 'Pretendard';
+	overflow: hidden;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+	font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+		monospace;
+}
+
+.hey-table .ant-table-thead > tr > th {
+	padding: 6px;
+	font-size: 12px; /* Header font size */
+}
+
+.hey-table .ant-table-tbody > tr > td {
+	font-size: 12px; /* Row font size */
+	padding: 6px;
 }

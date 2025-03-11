@@ -1,26 +1,28 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { Route, Routes } from 'react-router-dom';
+import { pathNames } from './const/pathNames';
+import { LoginPage } from './pages/LoginPage';
+import { UsersPage } from './pages/UsersPage';
+import { useEffect } from 'react';
+import { addUsers100 } from 'test/user';
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+	useEffect(() => {
+		//test
+		// addUsers100();
+	}, []);
+
+	return (
+		<Routes>
+			<Route
+				path={pathNames.login}
+				element={<LoginPage />}
+			/>
+			<Route
+				path={pathNames.userManagement}
+				element={<UsersPage />}
+			/>
+		</Routes>
+	);
 }
 
 export default App;
