@@ -6,7 +6,8 @@ module.exports = {
 			colors: {
 				'hey-orange': '#EE7800',
 				gray: '#626262',
-				'gray-dark': '#4a4a4a'
+				'gray-dark': '#4a4a4a',
+				'gray-light': '#adadad'
 			},
 		},
 	},

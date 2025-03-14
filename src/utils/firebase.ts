@@ -1,8 +1,12 @@
-import { db } from 'config/firebase';
+import { db, storage } from 'config/firebase';
 import {
+	addDoc,
 	collection,
+	deleteDoc,
+	doc,
 	DocumentData,
 	getCountFromServer,
+	getDoc,
 	getDocs,
 	limit,
 	orderBy,
@@ -10,10 +14,16 @@ import {
 	QueryConstraint,
 	QueryDocumentSnapshot,
 	QuerySnapshot,
+	setDoc,
 	startAfter,
 	startAt,
+	updateDoc,
 	where,
 } from 'firebase/firestore';
+import { Dispatch, SetStateAction } from 'react';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { message, UploadFile } from 'antd';
+import { UploadFileStatus } from 'antd/es/upload/interface';
 
 export interface StartDocInfo {
 	pageIdx: number;
@@ -29,8 +39,8 @@ export const fetchTotalCount = async (path: string) => {
 	}
 };
 
-export const fetchData = async (
-	path: string,
+export const fetchTableData = async (
+	collectionName: string,
 	startDocInfo: StartDocInfo | undefined,
 	pageSize: number,
 	page: number,
@@ -57,12 +67,12 @@ export const fetchData = async (
 		if (page === 1) {
 			q = queryConstraints
 				? query(
-						collection(db, path),
+						collection(db, collectionName),
 						...queryConstraints,
 						limit(pageSize)
 				  )
 				: query(
-						collection(db, path),
+						collection(db, collectionName),
 						orderBy('createdAt', 'desc'),
 						limit(pageSize)
 				  );
@@ -75,12 +85,12 @@ export const fetchData = async (
 		} else if (page === lastPage) {
 			q = queryConstraints
 				? query(
-						collection(db, path),
+						collection(db, collectionName),
 						...queryConstraints,
 						limit(total % pageSize)
 				  )
 				: query(
-						collection(db, path),
+						collection(db, collectionName),
 						orderBy('createdAt'),
 						limit(total % pageSize)
 				  );
@@ -94,7 +104,7 @@ export const fetchData = async (
 			if (startDocInfo && startDocInfo.pageIdx < pageIdx) {
 				q = queryConstraints
 					? query(
-							collection(db, path),
+							collection(db, collectionName),
 							...queryConstraints,
 							startAt(startDocInfo.doc),
 							limit(
@@ -102,7 +112,7 @@ export const fetchData = async (
 							)
 					  )
 					: query(
-							collection(db, path),
+							collection(db, collectionName),
 							orderBy('createdAt', 'desc'),
 							startAt(startDocInfo.doc),
 							limit(
@@ -118,13 +128,13 @@ export const fetchData = async (
 			} else if (startDocInfo && pageIdx < startDocInfo.pageIdx) {
 				q = queryConstraints
 					? query(
-							collection(db, path),
+							collection(db, collectionName),
 							...queryConstraints,
 							startAfter(startDocInfo.doc),
 							limit((startDocInfo.pageIdx - pageIdx) * pageSize)
 					  )
 					: query(
-							collection(db, path),
+							collection(db, collectionName),
 							orderBy('createdAt'),
 							startAfter(startDocInfo.doc),
 							limit((startDocInfo.pageIdx - pageIdx) * pageSize)
@@ -158,9 +168,12 @@ export const fetchData = async (
 	}
 };
 
-export const fetchLogWholeData = async (path: string) => {
+export const fetchLogWholeData = async (collectionName: string) => {
 	try {
-		const q = query(collection(db, path), orderBy('createdAt', 'desc'));
+		const q = query(
+			collection(db, collectionName),
+			orderBy('createdAt', 'desc')
+		);
 
 		const querySnapshot = await getDocs(q);
 		console.log(querySnapshot.docs.map((doc) => doc.data()));
@@ -170,7 +183,7 @@ export const fetchLogWholeData = async (path: string) => {
 };
 
 export const fetchSearchData = async (
-	path: string,
+	collectionName: string,
 	startDocInfo: StartDocInfo | undefined,
 	pageSize: number,
 	page: number,
@@ -183,8 +196,8 @@ export const fetchSearchData = async (
 	>,
 	setTotalCount: (value: React.SetStateAction<number>) => void // For setting total count
 ) => {
-	await fetchData(
-		path,
+	await fetchTableData(
+		collectionName,
 		startDocInfo,
 		pageSize,
 		page,
@@ -212,5 +225,123 @@ export const fetchSearchData = async (
 		setTotalCount(totalCount);
 	} catch (error) {
 		console.error('Error fetching users:', error);
+	}
+};
+
+export const fetchDataWithDocId = async (
+	collectionName: string,
+	id: string,
+	setData?: Dispatch<SetStateAction<any>>
+) => {
+	try {
+		const docRef = doc(db, collectionName, id);
+		const docSnap = await getDoc(docRef);
+
+		if (docSnap.exists()) {
+			const data = { id: docSnap.id, ...docSnap.data() };
+			if (setData) {
+				setData(data);
+			}
+			return data;
+		} else {
+			console.error(`No such document with id ${id}!`);
+		}
+	} catch (err) {
+		console.error('Error fetching document:', err);
+	}
+};
+
+export const fetchCollectionData = async (
+	collectionName: string,
+	setData?: Dispatch<SetStateAction<any>>
+) => {
+	try {
+		const querySnapshot = await getDocs(collection(db, collectionName));
+		const documents = querySnapshot.docs.map((doc) => ({
+			id: doc.id, // 문서 ID 포함
+			...doc.data(), // 문서 데이터 포함
+		}));
+		if (setData) {
+			setData(documents);
+		}
+		return documents;
+	} catch (err) {
+		console.error('Error fetching collection:', err);
+	}
+};
+
+export const uploadFileData = async (file: UploadFile, path: string) => {
+	const fileRef = ref(storage, path); // Firebase Storage의 "uploads" 폴더에 파일 저장
+	try {
+		// Firebase Storage에 파일 업로드
+		if (file.originFileObj) {
+			await uploadBytes(fileRef, file.originFileObj);
+		}
+	} catch (error) {
+		console.error(error);
+		message.error(`파일 업로드에 실패했습니다`);
+	}
+};
+
+export const addData = async (collectionName: string, data: any) => {
+	try {
+		const docRef = doc(db, collectionName, data.id); // "users" collection and custom document ID
+		const { id, ...dataWithoutId } = data;
+
+		await setDoc(docRef, dataWithoutId);
+		message.success(`추가를 완료하였습니다.`);
+	} catch (error) {
+		console.error('Error adding document:', error);
+		message.error(`추가를 실패하였습니다.`);
+	}
+};
+
+export const updateData = async (collectionName: string, data: any) => {
+	try {
+		const docRef = doc(db, collectionName, data.id);
+		const { id, ...dataWithoutId } = data;
+
+		await updateDoc(docRef, dataWithoutId);
+		message.success(`수정이 완료되었습니다.`);
+	} catch (error) {
+		console.error('Error updating document: ', error);
+		message.error(`수정을 실패하였습니다.`);
+	}
+};
+
+export const fetchFileData = async (
+	paths: string[],
+	setFileList: Dispatch<SetStateAction<UploadFile<any>[]>>
+) => {
+	const files: UploadFile<any>[] = await Promise.all(
+		paths.map(async (path) => {
+			try {
+				const url = await getDownloadURL(ref(storage, path));
+				return {
+					uid: path, // 고유 ID (파일 경로 사용)
+					name: path.split('/').pop() || 'image.jpg', // 파일 이름
+					status: 'done' as UploadFileStatus, // 업로드 완료 상태
+					url, // Firebase Storage에서 가져온 다운로드 URL
+				};
+			} catch (error) {
+				console.error('Failed to get image URL:', error);
+				return Promise.reject(error);
+			}
+		})
+	);
+
+	setFileList(files);
+};
+
+export const deleteData = async (collectionName: string, id: string) => {
+	try {
+		const docRef = doc(db, collectionName, id); // "users" 컬렉션과 문서 ID로 참조 생성
+		await deleteDoc(docRef); // 문서 삭제
+
+		console.log(`Document with ID ${id} deleted successfully!`);
+		message.success('삭제를 완료하였습니다.')
+	} catch (error) {
+		console.error('Error deleting document:', error);
+		message.error('삭제를 실패하였습니다.')
 	}
 };

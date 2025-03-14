@@ -1,8 +1,9 @@
-import { Button, Checkbox, Form, FormProps, Input } from 'antd';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { Button, Form, FormProps, Input } from 'antd';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { useNavigate } from 'react-router-dom';
 import { pathNames } from '../const/pathNames';
+import { useEffect } from 'react';
 
 type FieldType = {
 	email?: string;
@@ -13,7 +14,6 @@ export function LoginTemplate() {
 	const navigate = useNavigate();
 
 	const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
-		console.log('Success:', values);
 		if (values.email && values.password) {
 			try {
 				await signInWithEmailAndPassword(
@@ -21,9 +21,12 @@ export function LoginTemplate() {
 					values.email,
 					values.password
 				);
+				localStorage.setItem('email', values.email);
+				localStorage.setItem('password', values.password);
 				navigate(pathNames.userManagement);
 			} catch (error) {
-				console.log(error);
+				console.error(error);
+				window.alert('없는 이메일이거나 비밀번호가 맞지 않습니다.');
 			}
 		}
 	};
@@ -73,7 +76,7 @@ export function LoginTemplate() {
 								message: '비밀번호를 입력하세요',
 							},
 						]}>
-						<Input.Password />
+						<Input.Password autoComplete='new-password' />
 					</Form.Item>
 					<Form.Item label={null}>
 						<Button

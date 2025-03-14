@@ -6,14 +6,13 @@ import { useNavigate } from 'react-router-dom';
 import { pathNames } from 'const/pathNames';
 import { useDocIdStore } from 'stores/docIdStore';
 import {
-	fetchData,
+	fetchTableData,
 	fetchSearchData,
 	fetchTotalCount,
 	StartDocInfo,
 } from 'utils/firebase';
-import {
-	Timestamp,
-} from 'firebase/firestore';
+import { Timestamp } from 'firebase/firestore';
+import { PAGE_SIZE } from 'const/table';
 
 export interface UserData {
 	id: string;
@@ -22,7 +21,6 @@ export interface UserData {
 	phone: string;
 	address: string;
 	addressDetail: string;
-	regionId: string;
 	createdAt: Timestamp;
 	updatedAt?: Timestamp;
 }
@@ -34,7 +32,7 @@ const searchFieldOptions = [
 	{ value: 'phone', label: '전화번호' },
 ];
 
-const PAGE_SIZE = 15; // Number of items per page
+export const collNameUsers = 'users';
 
 export function UsersTemplate() {
 	const [rowData, setRowData] = useState<UserData[]>([]);
@@ -53,19 +51,19 @@ export function UsersTemplate() {
 	const { Search } = Input;
 
 	const navigte = useNavigate();
-	const setId = useDocIdStore((state) => state.setId);
+	const setDocId = useDocIdStore((state) => state.setId);
 
 	useEffect(() => {
 		initFetchData();
 	}, []);
 
 	const initFetchData = async () => {
-		const totalCnt = await fetchTotalCount('users');
+		const totalCnt = await fetchTotalCount(collNameUsers);
 
 		if (totalCnt) {
 			setTotal(totalCnt);
-			fetchData(
-				'users',
+			fetchTableData(
+				collNameUsers,
 				startDocInfo,
 				PAGE_SIZE,
 				currentPage,
@@ -84,7 +82,7 @@ export function UsersTemplate() {
 
 		if (e.target.value) {
 			fetchSearchData(
-				'users',
+				collNameUsers,
 				undefined,
 				PAGE_SIZE,
 				1,
@@ -99,8 +97,8 @@ export function UsersTemplate() {
 				setTotal
 			);
 		} else {
-			fetchData(
-				'users',
+			fetchTableData(
+				collNameUsers,
 				startDocInfo,
 				PAGE_SIZE,
 				1,
@@ -109,7 +107,7 @@ export function UsersTemplate() {
 				setRowData,
 				setStartDocInfo
 			);
-			fetchTotalCount('users');
+			fetchTotalCount(collNameUsers);
 		}
 	};
 
@@ -119,8 +117,8 @@ export function UsersTemplate() {
 		setCurrentPage(1);
 		setSearchField(value);
 
-		fetchData(
-			'users',
+		fetchTableData(
+			collNameUsers,
 			startDocInfo,
 			PAGE_SIZE,
 			1,
@@ -129,7 +127,7 @@ export function UsersTemplate() {
 			setRowData,
 			setStartDocInfo
 		);
-		fetchTotalCount('users');
+		fetchTotalCount(collNameUsers);
 	};
 
 	const handlePageChange = (page: number) => {
@@ -137,7 +135,7 @@ export function UsersTemplate() {
 
 		if (searchValue) {
 			fetchSearchData(
-				'users',
+				collNameUsers,
 				searchStartDocInfo,
 				PAGE_SIZE,
 				page,
@@ -152,8 +150,8 @@ export function UsersTemplate() {
 				setTotal
 			);
 		} else {
-			fetchData(
-				'users',
+			fetchTableData(
+				collNameUsers,
 				startDocInfo,
 				PAGE_SIZE,
 				page,
@@ -188,10 +186,12 @@ export function UsersTemplate() {
 			dataIndex: 'addressDetail',
 		},
 		{
-			title: '가입날짜',
+			title: '가입일',
 			dataIndex: 'createdAt',
 			render: (value: Timestamp) =>
-				new Date(value.seconds * 1000).toLocaleDateString(),
+				new Date(
+					value.seconds * 1000 + value.nanoseconds / 1000000
+				).toLocaleString(),
 		},
 		{
 			title: '',
@@ -201,7 +201,7 @@ export function UsersTemplate() {
 				<div
 					className='text-blue-600 hover:cursor-pointer'
 					onClick={() => {
-						setId(record.id);
+						setDocId(record.id);
 						navigte(pathNames.userDetail);
 					}}>
 					보기
@@ -212,46 +212,44 @@ export function UsersTemplate() {
 
 	return (
 		<CommonTemplate
-			content={
-				<div className='flex flex-col gap-[12px]'>
-					<div className='flex items-center gap-[8px]'>
-						<Select
-							value={searchField}
-							style={{ width: 120 }}
-							onChange={onChageSearchField}
-							options={searchFieldOptions}
-						/>
-						<Search
-							value={searchValue}
-							placeholder='input search text'
-							allowClear
-							style={{ width: 200 }}
-							onChange={onChangeSearchValue}
-						/>
-					</div>
-					<Table<UserData>
-						size={'small'}
-						className={'hey-table'}
-						columns={columns}
-						rowKey={(record) => record.id}
-						dataSource={rowData}
-						loading={loading}
-						pagination={false}
-						scroll={{ y: 600 }} // Enables vertical scroll with 400px height
-					/>
-					<div className='w-full flex justify-center mt-[36px]'>
-						<Pagination
-							current={currentPage}
-							total={total}
-							pageSize={PAGE_SIZE}
-							onChange={handlePageChange}
-							showSizeChanger={false}
-						/>
-					</div>
-				</div>
-			}
 			label={'회원관리'}
-			allCnt={total}
-		/>
+			allCnt={total}>
+			<div className='flex flex-col gap-[12px]'>
+				<div className='flex items-center gap-[8px]'>
+					<Select
+						value={searchField}
+						style={{ width: 120 }}
+						onChange={onChageSearchField}
+						options={searchFieldOptions}
+					/>
+					<Search
+						value={searchValue}
+						placeholder='input search text'
+						allowClear
+						style={{ width: 200 }}
+						onChange={onChangeSearchValue}
+					/>
+				</div>
+				<Table<UserData>
+					size={'small'}
+					className={'hey-table'}
+					columns={columns}
+					rowKey={(record) => record.id}
+					dataSource={rowData}
+					loading={loading}
+					pagination={false}
+					scroll={{ y: 600 }} // Enables vertical scroll with 400px height
+				/>
+				<div className='w-full flex justify-center mt-[36px]'>
+					<Pagination
+						current={currentPage}
+						total={total}
+						pageSize={PAGE_SIZE}
+						onChange={handlePageChange}
+						showSizeChanger={false}
+					/>
+				</div>
+			</div>
+		</CommonTemplate>
 	);
 }
