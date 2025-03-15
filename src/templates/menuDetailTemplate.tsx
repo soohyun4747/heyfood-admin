@@ -16,7 +16,7 @@ import {
 	uploadFileData,
 } from 'utils/firebase';
 import { CommonTemplate } from './CommonTemplate';
-import { Button, Modal, Upload, UploadFile } from 'antd';
+import { Button, message, Modal, Upload, UploadFile } from 'antd';
 import { LabelTextField } from 'components/LabelTexfield';
 import { LabelDropdown, Option } from 'components/LabelDropdown';
 import { v4 as uuidv4 } from 'uuid';
@@ -126,7 +126,12 @@ export function MenuDetailTemplate() {
 				uploadFileData(file, path);
 			});
 
-			addData(collNameMenus, uploadingData);
+			if (checkAllValuesFilled(uploadingData)) {
+				addData(collNameMenus, uploadingData);
+			} else {
+				message.error('모든 항목을 채워주세요.');
+				return;
+			}
 		}
 		navigate(-1);
 	};
@@ -142,9 +147,32 @@ export function MenuDetailTemplate() {
 				uploadingData.imagePaths.push(path);
 				uploadFileData(file, path);
 			});
-			updateData(collNameMenus, uploadingData);
+			if (checkAllValuesFilled(uploadingData)) {
+				updateData(collNameMenus, uploadingData);
+			} else {
+				message.error('모든 항목을 채워주세요.');
+				return;
+			}
 		}
 		navigate(-1);
+	};
+
+	const checkAllValuesFilled = (data: MenuData) => {
+		const keys = Object.keys(data);
+		let isAllFilled = true;
+
+		for (let i = 0; i < keys.length; i++) {
+			if (!data[keys[i]]) {
+				isAllFilled = false;
+				break;
+			}
+		}
+
+		if (data.imagePaths.length < 1) {
+			isAllFilled = false;
+		}
+
+		return isAllFilled;
 	};
 
 	return (

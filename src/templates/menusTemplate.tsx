@@ -10,7 +10,16 @@ import {
 } from 'utils/firebase';
 import { PAGE_SIZE } from 'const/table';
 import { Timestamp } from 'firebase/firestore';
-import { Button, Input, Modal, Pagination, Select, Table } from 'antd';
+import {
+	Button,
+	Input,
+	Modal,
+	Pagination,
+	Radio,
+	RadioChangeEvent,
+	Select,
+	Table,
+} from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useDocIdStore } from 'stores/docIdStore';
 import { ColumnsType } from 'antd/es/table';
@@ -22,6 +31,7 @@ export interface MenuCategory {
 }
 
 export interface MenuData {
+	[key: string]: any;
 	id: string;
 	name: string;
 	categoryId: string;
@@ -37,6 +47,8 @@ const searchFieldOptions = [{ value: 'name', label: '메뉴명' }];
 export const collNameMenus = 'menus';
 export const collNameMenuCategories = 'menuCategories';
 
+const categoryAllValue = 'all';
+
 export function MenusTemplate() {
 	const [total, setTotal] = useState(0);
 	const [startDocInfo, setStartDocInfo] = useState<StartDocInfo>();
@@ -47,6 +59,8 @@ export function MenusTemplate() {
 	const [searchStartDocInfo, setSearchStartDocInfo] =
 		useState<StartDocInfo>();
 	const [menuCategories, setMenuCategories] = useState<MenuCategory[]>();
+	const [selectedMenuCategory, setSelectedMenuCategory] =
+		useState<string>(categoryAllValue);
 	const [deleteMenu, setDeleteMenu] = useState<MenuData>();
 
 	const { Search } = Input;
@@ -111,6 +125,40 @@ export function MenusTemplate() {
 				setStartDocInfo
 			);
 			fetchTotalCount('menus');
+		}
+	};
+
+	const onSelectMenuCategory = (e: RadioChangeEvent) => {
+		const value = e.target.value;
+		setSelectedMenuCategory(value);
+
+		if (value === categoryAllValue) {
+			fetchTableData(
+				collNameMenus,
+				startDocInfo,
+				PAGE_SIZE,
+				1,
+				total,
+				setLoading,
+				setRowData,
+				setStartDocInfo
+			);
+		} else {
+			fetchSearchData(
+				collNameMenus,
+				undefined,
+				PAGE_SIZE,
+				1,
+				{
+					value: e.target.value,
+					field: 'categoryId',
+				},
+				total,
+				setLoading,
+				setRowData,
+				setSearchStartDocInfo,
+				setTotal
+			);
 		}
 	};
 
@@ -241,6 +289,17 @@ export function MenusTemplate() {
 						메뉴추가
 					</Button>
 				</div>
+
+				<Radio.Group
+					value={selectedMenuCategory}
+					onChange={onSelectMenuCategory}>
+					<Radio.Button value={categoryAllValue}>전체</Radio.Button>
+					{menuCategories?.map((category) => (
+						<Radio.Button value={category.id}>
+							{category.name}
+						</Radio.Button>
+					))}
+				</Radio.Group>
 				<Table<MenuData>
 					size={'small'}
 					className={'hey-table'}
