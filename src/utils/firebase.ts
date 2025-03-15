@@ -5,6 +5,7 @@ import {
 	deleteDoc,
 	doc,
 	DocumentData,
+	endAt,
 	getCountFromServer,
 	getDoc,
 	getDocs,
@@ -187,6 +188,7 @@ export const fetchSearchData = async (
 	startDocInfo: StartDocInfo | undefined,
 	pageSize: number,
 	page: number,
+	filter: { value: string | undefined; field: string } | undefined,
 	search: { value: string | undefined; field: string },
 	total: number,
 	setLoading: (value: React.SetStateAction<boolean>) => void,
@@ -196,6 +198,24 @@ export const fetchSearchData = async (
 	>,
 	setTotalCount: (value: React.SetStateAction<number>) => void // For setting total count
 ) => {
+	const qConstraintsFilter = filter
+		? [where(filter.field, '==', filter.value)]
+		: [];
+	const qContraintsSearch = search.value
+		? [
+				orderBy(search.field),
+				startAt(search.value),
+				endAt(search.value + '\uf8ff'),
+		  ]
+		: [];
+
+	const qConstraintsSearchForCount = search.value
+		? [
+				where(search.field, '>=', search.value),
+				where(search.field, '<=', search.value + '\uf8ff'),
+		  ]
+		: [];
+
 	await fetchTableData(
 		collectionName,
 		startDocInfo,
@@ -205,18 +225,14 @@ export const fetchSearchData = async (
 		setLoading,
 		setRowData,
 		setStartDocInfo,
-		[
-			orderBy(search.field),
-			where(search.field, '>=', search.value),
-			where(search.field, '<=', search.value + '\uf8ff'),
-		]
+		[...qConstraintsFilter, ...qContraintsSearch]
 	);
 	try {
 		// Total count query (no pagination, just count)
 		const countQuery = query(
-			collection(db, 'users'),
-			where(search.field, '>=', search.value),
-			where(search.field, '<=', search.value + '\uf8ff')
+			collection(db, collectionName),
+			...qConstraintsFilter,
+			...qConstraintsSearchForCount
 		);
 		const countSnapshot = await getCountFromServer(countQuery);
 		const totalCount = countSnapshot.data().count;
@@ -224,7 +240,7 @@ export const fetchSearchData = async (
 		// Set the total count
 		setTotalCount(totalCount);
 	} catch (error) {
-		console.error('Error fetching users:', error);
+		console.error(`Error fetching ${collectionName}:`, error);
 	}
 };
 
@@ -339,9 +355,9 @@ export const deleteData = async (collectionName: string, id: string) => {
 		await deleteDoc(docRef); // 문서 삭제
 
 		console.log(`Document with ID ${id} deleted successfully!`);
-		message.success('삭제를 완료하였습니다.')
+		message.success('삭제를 완료하였습니다.');
 	} catch (error) {
 		console.error('Error deleting document:', error);
-		message.error('삭제를 실패하였습니다.')
+		message.error('삭제를 실패하였습니다.');
 	}
 };

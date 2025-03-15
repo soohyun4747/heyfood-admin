@@ -107,6 +107,7 @@ export function MenuDetailTemplate() {
 					return { ...prev };
 				}
 			});
+            setPriceInput(numVal);
 		}
 	};
 

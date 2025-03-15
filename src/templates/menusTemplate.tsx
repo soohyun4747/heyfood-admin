@@ -96,70 +96,49 @@ export function MenusTemplate() {
 		setSearchValue(e.target.value);
 		setSearchStartDocInfo(undefined);
 		setCurrentPage(1);
-
-		if (e.target.value) {
-			fetchSearchData(
-				collNameMenus,
-				undefined,
-				PAGE_SIZE,
-				1,
-				{
-					value: e.target.value,
-					field: searchFieldOptions[0].value,
-				},
-				total,
-				setLoading,
-				setRowData,
-				setSearchStartDocInfo,
-				setTotal
-			);
-		} else {
-			fetchTableData(
-				collNameMenus,
-				startDocInfo,
-				PAGE_SIZE,
-				1,
-				total,
-				setLoading,
-				setRowData,
-				setStartDocInfo
-			);
-			fetchTotalCount('menus');
-		}
+		
+		fetchSearchData(
+			collNameMenus,
+			undefined,
+			PAGE_SIZE,
+			1,
+			selectedMenuCategory === categoryAllValue
+				? undefined
+				: { value: selectedMenuCategory, field: 'categoryId' },
+			{
+				value: e.target.value,
+				field: searchFieldOptions[0].value,
+			},
+			total,
+			setLoading,
+			setRowData,
+			setSearchStartDocInfo,
+			setTotal
+		);
 	};
 
 	const onSelectMenuCategory = (e: RadioChangeEvent) => {
-		const value = e.target.value;
-		setSelectedMenuCategory(value);
+		const selectedCategory = e.target.value;
+		setSelectedMenuCategory(selectedCategory);
 
-		if (value === categoryAllValue) {
-			fetchTableData(
-				collNameMenus,
-				startDocInfo,
-				PAGE_SIZE,
-				1,
-				total,
-				setLoading,
-				setRowData,
-				setStartDocInfo
-			);
-		} else {
-			fetchSearchData(
-				collNameMenus,
-				undefined,
-				PAGE_SIZE,
-				1,
-				{
-					value: e.target.value,
-					field: 'categoryId',
-				},
-				total,
-				setLoading,
-				setRowData,
-				setSearchStartDocInfo,
-				setTotal
-			);
-		}
+		fetchSearchData(
+			collNameMenus,
+			undefined,
+			PAGE_SIZE,
+			1,
+			selectedCategory === categoryAllValue
+				? undefined
+				: { value: selectedCategory, field: 'categoryId' },
+			{
+				value: searchValue,
+				field: searchFieldOptions[0].value,
+			},
+			total,
+			setLoading,
+			setRowData,
+			setSearchStartDocInfo,
+			setTotal
+		);
 	};
 
 	const handlePageChange = (page: number) => {
@@ -171,6 +150,9 @@ export function MenusTemplate() {
 				searchStartDocInfo,
 				PAGE_SIZE,
 				page,
+				selectedMenuCategory === categoryAllValue
+					? undefined
+					: { value: selectedMenuCategory, field: 'categoryId' },
 				{
 					value: searchValue,
 					field: searchFieldOptions[0].value,
@@ -295,7 +277,9 @@ export function MenusTemplate() {
 					onChange={onSelectMenuCategory}>
 					<Radio.Button value={categoryAllValue}>전체</Radio.Button>
 					{menuCategories?.map((category) => (
-						<Radio.Button value={category.id}>
+						<Radio.Button
+							key={category.id}
+							value={category.id}>
 							{category.name}
 						</Radio.Button>
 					))}

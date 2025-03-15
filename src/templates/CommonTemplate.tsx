@@ -75,7 +75,7 @@ export function CommonTemplate({
 					<div className='px-[18px] font-semibold text-gray-dark'>
 						{label}
 					</div>
-					{allCnt && (
+					{allCnt !== undefined && (
 						<div className='px-[18px] flex items-center text-xs gap-[6px]'>
 							<div className='text-gray'>전체목록</div>
 							<div>{allCnt}</div>

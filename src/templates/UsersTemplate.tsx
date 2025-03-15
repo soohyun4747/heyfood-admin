@@ -86,6 +86,7 @@ export function UsersTemplate() {
 				undefined,
 				PAGE_SIZE,
 				1,
+				undefined,
 				{
 					value: e.target.value,
 					field: searchField,
@@ -139,6 +140,7 @@ export function UsersTemplate() {
 				searchStartDocInfo,
 				PAGE_SIZE,
 				page,
+				undefined,
 				{
 					value: searchValue,
 					field: searchField,
