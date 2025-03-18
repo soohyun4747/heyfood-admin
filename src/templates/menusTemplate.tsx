@@ -47,7 +47,7 @@ const searchFieldOptions = [{ value: 'name', label: '메뉴명' }];
 export const collNameMenus = 'menus';
 export const collNameMenuCategories = 'menuCategories';
 
-const categoryAllValue = 'all';
+export const categoryAllValue = 'all';
 
 export function MenusTemplate() {
 	const [total, setTotal] = useState(0);
@@ -56,8 +56,6 @@ export function MenusTemplate() {
 	const [loading, setLoading] = useState(false);
 	const [rowData, setRowData] = useState<MenuData[]>([]);
 	const [searchValue, setSearchValue] = useState<string>();
-	const [searchStartDocInfo, setSearchStartDocInfo] =
-		useState<StartDocInfo>();
 	const [menuCategories, setMenuCategories] = useState<MenuCategory[]>();
 	const [selectedMenuCategory, setSelectedMenuCategory] =
 		useState<string>(categoryAllValue);
@@ -94,9 +92,9 @@ export function MenusTemplate() {
 
 	const onChangeSearchValue = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setSearchValue(e.target.value);
-		setSearchStartDocInfo(undefined);
+		setStartDocInfo(undefined);
 		setCurrentPage(1);
-		
+
 		fetchSearchData(
 			collNameMenus,
 			undefined,
@@ -109,34 +107,33 @@ export function MenusTemplate() {
 				value: e.target.value,
 				field: searchFieldOptions[0].value,
 			},
-			total,
 			setLoading,
 			setRowData,
-			setSearchStartDocInfo,
+			setStartDocInfo,
 			setTotal
 		);
 	};
 
 	const onSelectMenuCategory = (e: RadioChangeEvent) => {
-		const selectedCategory = e.target.value;
-		setSelectedMenuCategory(selectedCategory);
+		setSelectedMenuCategory(e.target.value);
+		setStartDocInfo(undefined);
+		setCurrentPage(1);
 
 		fetchSearchData(
 			collNameMenus,
 			undefined,
 			PAGE_SIZE,
 			1,
-			selectedCategory === categoryAllValue
+			e.target.value === categoryAllValue
 				? undefined
-				: { value: selectedCategory, field: 'categoryId' },
+				: { value: e.target.value, field: 'categoryId' },
 			{
 				value: searchValue,
 				field: searchFieldOptions[0].value,
 			},
-			total,
 			setLoading,
 			setRowData,
-			setSearchStartDocInfo,
+			setStartDocInfo,
 			setTotal
 		);
 	};
@@ -144,37 +141,23 @@ export function MenusTemplate() {
 	const handlePageChange = (page: number) => {
 		setCurrentPage(page);
 
-		if (searchValue) {
-			fetchSearchData(
-				collNameMenus,
-				searchStartDocInfo,
-				PAGE_SIZE,
-				page,
-				selectedMenuCategory === categoryAllValue
-					? undefined
-					: { value: selectedMenuCategory, field: 'categoryId' },
-				{
-					value: searchValue,
-					field: searchFieldOptions[0].value,
-				},
-				total,
-				setLoading,
-				setRowData,
-				setSearchStartDocInfo,
-				setTotal
-			);
-		} else {
-			fetchTableData(
-				collNameMenus,
-				startDocInfo,
-				PAGE_SIZE,
-				page,
-				total,
-				setLoading,
-				setRowData,
-				setStartDocInfo
-			);
-		}
+		fetchSearchData(
+			collNameMenus,
+			startDocInfo,
+			PAGE_SIZE,
+			page,
+			selectedMenuCategory === categoryAllValue
+				? undefined
+				: { value: selectedMenuCategory, field: 'categoryId' },
+			{
+				value: searchValue,
+				field: searchFieldOptions[0].value,
+			},
+			setLoading,
+			setRowData,
+			setStartDocInfo,
+			setTotal
+		);
 	};
 
 	const onDelete = () => {

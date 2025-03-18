@@ -25,6 +25,8 @@ export interface UserData {
 	updatedAt?: Timestamp;
 }
 
+export interface GuestData extends Omit<UserData, 'email'> {}
+
 const searchFieldOptions = [
 	{ value: 'name', label: '이름' },
 	{ value: 'email', label: '이메일' },
@@ -91,7 +93,6 @@ export function UsersTemplate() {
 					value: e.target.value,
 					field: searchField,
 				},
-				total,
 				setLoading,
 				setRowData,
 				setSearchStartDocInfo,
@@ -112,7 +113,7 @@ export function UsersTemplate() {
 		}
 	};
 
-	const onChageSearchField = (value: string) => {
+	const onChangeSearchField = (value: string) => {
 		setSearchValue(undefined);
 		setSearchStartDocInfo(undefined);
 		setCurrentPage(1);
@@ -145,7 +146,6 @@ export function UsersTemplate() {
 					value: searchValue,
 					field: searchField,
 				},
-				total,
 				setLoading,
 				setRowData,
 				setSearchStartDocInfo,
@@ -221,7 +221,7 @@ export function UsersTemplate() {
 					<Select
 						value={searchField}
 						style={{ width: 120 }}
-						onChange={onChageSearchField}
+						onChange={onChangeSearchField}
 						options={searchFieldOptions}
 					/>
 					<Search

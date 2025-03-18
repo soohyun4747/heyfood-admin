@@ -9,7 +9,6 @@ export const addUsers100 = async () => {
     phone: `010-${faker.number.int({ min: 1000, max: 9999 })}-${faker.number.int({ min: 1000, max: 9999 })}`, // 한국 전화번호
     address: `부산광역시 ${faker.location.city()} ${faker.location.street()}`, // 랜덤 한국 주소
     addressDetail: `${faker.number.int({ min: 1, max: 30 })}동 ${faker.number.int({ min: 101, max: 2000 })}호`, // 랜덤 동/호수
-    regionId: regions.haeundaegu, // 지역 ID (고정)
     createdAt: Timestamp.now(), // Firestore Timestamp
   }));
 

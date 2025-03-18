@@ -7,8 +7,10 @@ import '@ant-design/v5-patch-for-react-19';
 import { LoginTemplate } from 'templates/LoginTemplate';
 import { UsersTemplate } from 'templates/UsersTemplate';
 import { UserDetailTemplate } from 'templates/UserDetailTemplate';
-import { MenusTemplate } from 'templates/menusTemplate';
-import { MenuDetailTemplate } from 'templates/menuDetailTemplate';
+import { MenusTemplate } from 'templates/MenusTemplate';
+import { MenuDetailTemplate } from 'templates/MenuDetailTemplate';
+import { OrdersTemplate } from 'templates/OrdersTemplate';
+import { generateRandomOrderData } from 'test/order';
 
 function App() {
 	const navigate = useNavigate();
@@ -17,6 +19,7 @@ function App() {
 	useEffect(() => {
 		//test
 		// addUsers100();
+		// generateRandomOrderData();
 
 		checkAuthority();
 	}, []);
@@ -63,6 +66,10 @@ function App() {
 			<Route
 				path={pathNames.menuDetail}
 				element={<MenuDetailTemplate />}
+			/>
+			<Route
+				path={pathNames.ordersManagement}
+				element={<OrdersTemplate />}
 			/>
 		</Routes>
 	);

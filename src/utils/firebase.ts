@@ -47,7 +47,7 @@ export const fetchTableData = async (
 	page: number,
 	total: number,
 	setLoading: (value: boolean) => void,
-	setRowData: (value: React.SetStateAction<any[]>) => void,
+	setRowData: ((value: React.SetStateAction<any[]>) => void) | undefined,
 	setStartDocInfo: React.Dispatch<
 		React.SetStateAction<StartDocInfo | undefined>
 	>,
@@ -161,8 +161,11 @@ export const fetchTableData = async (
 			});
 		}
 
-		setRowData(newData);
+		if (setRowData) {
+			setRowData(newData);
+		}
 		setLoading(false);
+		return newData;
 	} catch (error) {
 		console.error('Error fetching users:', error);
 		setLoading(false);
@@ -190,13 +193,12 @@ export const fetchSearchData = async (
 	page: number,
 	filter: { value: string | undefined; field: string } | undefined,
 	search: { value: string | undefined; field: string },
-	total: number,
 	setLoading: (value: React.SetStateAction<boolean>) => void,
-	setRowData: (value: React.SetStateAction<any[]>) => void,
+	setRowData: ((value: React.SetStateAction<any[]>) => void) | undefined,
 	setStartDocInfo: React.Dispatch<
 		React.SetStateAction<StartDocInfo | undefined>
 	>,
-	setTotalCount: (value: React.SetStateAction<number>) => void // For setting total count
+	setTotalCount: (value: React.SetStateAction<number>) => void, // For setting total count
 ) => {
 	const qConstraintsFilter = filter
 		? [where(filter.field, '==', filter.value)]
@@ -216,17 +218,6 @@ export const fetchSearchData = async (
 		  ]
 		: [];
 
-	await fetchTableData(
-		collectionName,
-		startDocInfo,
-		pageSize,
-		page,
-		total,
-		setLoading,
-		setRowData,
-		setStartDocInfo,
-		[...qConstraintsFilter, ...qContraintsSearch]
-	);
 	try {
 		// Total count query (no pagination, just count)
 		const countQuery = query(
@@ -239,6 +230,18 @@ export const fetchSearchData = async (
 
 		// Set the total count
 		setTotalCount(totalCount);
+
+		return await fetchTableData(
+			collectionName,
+			startDocInfo,
+			pageSize,
+			page,
+			totalCount,
+			setLoading,
+			setRowData,
+			setStartDocInfo,
+			[...qConstraintsFilter, ...qContraintsSearch]
+		);
 	} catch (error) {
 		console.error(`Error fetching ${collectionName}:`, error);
 	}
@@ -258,7 +261,7 @@ export const fetchDataWithDocId = async (
 			if (setData) {
 				setData(data);
 			}
-			return data;
+			return data as any;
 		} else {
 			console.error(`No such document with id ${id}!`);
 		}

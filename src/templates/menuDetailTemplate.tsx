@@ -4,7 +4,7 @@ import {
 	collNameMenus,
 	MenuCategory,
 	MenuData,
-} from './menusTemplate';
+} from './MenusTemplate';
 import { useDocIdStore } from 'stores/docIdStore';
 import { useNavigate } from 'react-router-dom';
 import {
