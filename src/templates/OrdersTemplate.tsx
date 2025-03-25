@@ -1,6 +1,8 @@
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { CommonTemplate } from './CommonTemplate';
 import {
+	Button,
+	DatePicker,
 	Input,
 	Pagination,
 	Radio,
@@ -11,7 +13,6 @@ import {
 import {
 	fetchCollectionData,
 	fetchDataWithDocId,
-	fetchSearchData,
 	fetchTableData,
 	fetchTotalCount,
 	StartDocInfo,
@@ -26,38 +27,32 @@ import {
 } from './MenusTemplate';
 import {
 	collection,
-	count,
-	DocumentData,
-	endAt,
 	getCountFromServer,
-	getDocs,
-	limit,
 	orderBy,
-	Query,
 	query,
-	startAt,
+	QueryConstraint,
 	Timestamp,
 	where,
 } from 'firebase/firestore';
 import { ColumnsType } from 'antd/es/table';
-import { collNameUsers, GuestData, UserData } from './UsersTemplate';
 import { useNavigate } from 'react-router-dom';
 import { useDocIdStore } from 'stores/docIdStore';
 import { pathNames } from 'const/pathNames';
 import { db } from 'config/firebase';
-import { log } from 'node:console';
+import { Dayjs } from 'dayjs';
+import ExcelButton from 'components/ExcelButton';
 
 const searchFieldOrdererName = 'ordererName';
-const searchFieldMenuName = 'menuName';
+const searchFieldMenuName = 'menuId';
 
 const searchFieldOptions = [
 	{ value: searchFieldOrdererName, label: '주문자명' },
 	{ value: searchFieldMenuName, label: '메뉴명' },
 ];
 
-const collNameOrders = 'orders';
-const collNameOrderItems = 'orderItems';
-const collNameGuests = 'guests';
+export const collNameOrders = 'orders';
+export const collNameOrderItems = 'orderItems';
+export const collNameGuests = 'guests';
 
 export const ordererType = {
 	user: 'user',
@@ -78,11 +73,10 @@ export interface OrderData {
 	id: string;
 	ordererId: string;
 	ordererType: OrdererType;
-	deliveryDate: Timestamp;
 	address: string;
 	addressDetail: string;
 	comment?: string;
-	paymentMethod: PaymentMethod;
+	paymentMethodId: PaymentMethod;
 	createdAt: Timestamp;
 	updatedAt?: Timestamp;
 }
@@ -90,15 +84,13 @@ export interface OrderData {
 export interface OrderItemData {
 	id: string;
 	orderId: string;
+	ordererName: string;
+	categoryId: string;
 	menuId: string;
 	quantity: number;
+	deliveryDate: Timestamp;
 	createdAt: Timestamp;
 	updatedAt?: Timestamp;
-}
-
-interface OrderRowData extends OrderData {
-	menuId: string;
-	quantity: number;
 }
 
 export function OrdersTemplate() {
@@ -111,13 +103,17 @@ export function OrdersTemplate() {
 	const [currentPage, setCurrentPage] = useState(1);
 	const [selectedMenuCategory, setSelectedMenuCategory] =
 		useState<string>(categoryAllValue);
-	const [loading, setLoading] = useState(false);
-	const [rowData, setRowData] = useState<OrderRowData[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [rowData, setRowData] = useState<OrderItemData[]>([]);
 	const [menuCategories, setMenuCategories] = useState<MenuCategory[]>();
 	const [menuList, setMenuList] = useState<MenuData[]>([]);
-	const [ordererNames, setOrdererNames] = useState<Record<string, string>>(
-		{}
-	);
+	const [orderStart, setOrderStart] = useState<Dayjs>();
+	const [orderEnd, setOrderEnd] = useState<Dayjs>();
+	const [deliveryStart, setDeliveryStart] = useState<Dayjs>();
+	const [deliveryEnd, setDeliveryEnd] = useState<Dayjs>();
+	const [onlyEdit, setOnlyEdit] = useState<boolean>(false);
+	const [orders, setOrders] = useState<OrderData[]>([]);
+	const [qConstraints, setQConstraints] = useState<QueryConstraint[]>([]);
 
 	const { Search } = Input;
 
@@ -129,42 +125,66 @@ export function OrdersTemplate() {
 	}, []);
 
 	useEffect(() => {
-		fetchOrdererNames();
-	}, [rowData]); // rowData가 변경될 때마다 실행
+		getSetCurrentPageOrdersData();
+	}, [rowData]);
 
 	const initFetchData = async () => {
-		fetchFilteredSearchOrdererName(
-			undefined,
-			undefined,
-			startDocInfo,
-			currentPage,
-			PAGE_SIZE,
-			setLoading,
-			setTotal,
-			setStartDocInfo,
-			setRowData
-		);
+		const totalCnt = await fetchTotalCount(collNameOrderItems);
+
+		if (totalCnt) {
+			setTotal(totalCnt);
+			fetchTableData(
+				collNameOrderItems,
+				startDocInfo,
+				PAGE_SIZE,
+				currentPage,
+				totalCnt,
+				setLoading,
+				setRowData,
+				setStartDocInfo
+			);
+		}
 
 		fetchCollectionData(collNameMenus, setMenuList);
 		fetchCollectionData(collNameMenuCategories, setMenuCategories);
 	};
 
-	const fetchOrdererNames = async () => {
-		const namesMap: Record<string, string> = {};
+	const resetFiltersGetSetData = async () => {
+		setCurrentPage(1);
+		setStartDocInfo(undefined);
+		setSearchValue(undefined);
+		setOrderStart(undefined);
+		setOrderEnd(undefined);
+		setDeliveryStart(undefined);
+		setDeliveryEnd(undefined);
+		setOnlyEdit(false);
+		setSelectedMenuCategory(categoryAllValue);
 
-		for (const order of rowData) {
-			const collName =
-				order.ordererType === ordererType.guest
-					? collNameGuests
-					: collNameUsers;
-			const ordererInfo = await fetchDataWithDocId(
-				collName,
-				order.ordererId
+		const totalCnt = await fetchTotalCount(collNameOrderItems);
+
+		if (totalCnt) {
+			setTotal(totalCnt);
+			fetchTableData(
+				collNameOrderItems,
+				undefined,
+				PAGE_SIZE,
+				1,
+				totalCnt,
+				setLoading,
+				setRowData,
+				setStartDocInfo
 			);
-			namesMap[order.ordererId] = ordererInfo?.name;
 		}
+	};
 
-		setOrdererNames(namesMap);
+	const getSetCurrentPageOrdersData = async () => {
+		const ordersData = await Promise.all(
+			rowData.map(async (row) => {
+				return await fetchDataWithDocId(collNameOrders, row.orderId);
+			})
+		);
+
+		setOrders(ordersData);
 	};
 
 	const onChangeSearchField = (value: string) => {
@@ -173,35 +193,24 @@ export function OrdersTemplate() {
 		setCurrentPage(1);
 		setSearchField(value);
 
-		if (value === searchFieldOrdererName) {
-			fetchFilteredSearchOrdererName(
-				selectedMenuCategory === categoryAllValue
-					? undefined
-					: selectedMenuCategory,
-				undefined,
-				undefined,
-				1,
-				PAGE_SIZE,
-				setLoading,
-				setTotal,
-				setStartDocInfo,
-				setRowData
-			);
-		} else {
-			fetchFilteredSearchMenuName(
-				selectedMenuCategory === categoryAllValue
-					? undefined
-					: selectedMenuCategory,
-				undefined,
-				undefined,
-				1,
-				PAGE_SIZE,
-				setLoading,
-				setTotal,
-				setStartDocInfo,
-				setRowData
-			);
-		}
+		filterDateGetSetRowData(
+			selectedMenuCategory,
+			undefined,
+			value,
+			undefined,
+			1,
+			PAGE_SIZE,
+			orderStart,
+			orderEnd,
+			deliveryStart,
+			deliveryEnd,
+			onlyEdit,
+			setTotal,
+			setLoading,
+			setStartDocInfo,
+			setRowData,
+			setQConstraints
+		);
 	};
 
 	const onChangeSearchValue = async (
@@ -211,144 +220,270 @@ export function OrdersTemplate() {
 		setStartDocInfo(undefined);
 		setCurrentPage(1);
 
-		if (searchField === searchFieldOrdererName) {
-			fetchFilteredSearchOrdererName(
-				selectedMenuCategory === categoryAllValue
-					? undefined
-					: selectedMenuCategory,
-				e.target.value,
-				undefined,
-				1,
-				PAGE_SIZE,
-				setLoading,
-				setTotal,
-				setStartDocInfo,
-				setRowData
-			);
-		} else {
-			fetchFilteredSearchMenuName(
-				selectedMenuCategory === categoryAllValue
-					? undefined
-					: selectedMenuCategory,
-				e.target.value,
-				undefined,
-				1,
-				PAGE_SIZE,
-				setLoading,
-				setTotal,
-				setStartDocInfo,
-				setRowData
-			);
-		}
+		filterDateGetSetRowData(
+			selectedMenuCategory,
+			e.target.value,
+			searchField,
+			undefined,
+			1,
+			PAGE_SIZE,
+			orderStart,
+			orderEnd,
+			deliveryStart,
+			deliveryEnd,
+			onlyEdit,
+			setTotal,
+			setLoading,
+			setStartDocInfo,
+			setRowData,
+			setQConstraints
+		);
 	};
 
 	const onSelectMenuCategory = async (e: RadioChangeEvent) => {
 		setSelectedMenuCategory(e.target.value);
+		setStartDocInfo(undefined);
+		setCurrentPage(1);
 
-		if (searchField === searchFieldOrdererName) {
-			fetchFilteredSearchOrdererName(
-				e.target.value === categoryAllValue
-					? undefined
-					: e.target.value,
-				searchValue,
-				startDocInfo,
-				1,
-				PAGE_SIZE,
-				setLoading,
-				setTotal,
-				setStartDocInfo,
-				setRowData
-			);
-		} else {
-			fetchFilteredSearchMenuName(
-				e.target.value === categoryAllValue
-					? undefined
-					: e.target.value,
-				searchValue,
-				startDocInfo,
-				1,
-				PAGE_SIZE,
-				setLoading,
-				setTotal,
-				setStartDocInfo,
-				setRowData
-			);
-		}
+		filterDateGetSetRowData(
+			e.target.value,
+			searchValue,
+			searchField,
+			undefined,
+			1,
+			PAGE_SIZE,
+			orderStart,
+			orderEnd,
+			deliveryStart,
+			deliveryEnd,
+			onlyEdit,
+			setTotal,
+			setLoading,
+			setStartDocInfo,
+			setRowData,
+			setQConstraints
+		);
 	};
 
 	const handlePageChange = async (page: number) => {
 		setCurrentPage(page);
 
-		if (searchField === searchFieldOrdererName) {
-			fetchFilteredSearchOrdererName(
-				selectedMenuCategory === categoryAllValue
-					? undefined
-					: selectedMenuCategory,
-				searchValue,
-				startDocInfo,
-				page,
-				PAGE_SIZE,
-				setLoading,
-				setTotal,
-				setStartDocInfo,
-				setRowData
-			);
-		} else {
-			fetchFilteredSearchMenuName(
-				selectedMenuCategory === categoryAllValue
-					? undefined
-					: selectedMenuCategory,
-				searchValue,
-				startDocInfo,
-				page,
-				PAGE_SIZE,
-				setLoading,
-				setTotal,
-				setStartDocInfo,
-				setRowData
-			);
-		}
+		filterDateGetSetRowData(
+			selectedMenuCategory,
+			searchValue,
+			searchField,
+			startDocInfo,
+			page,
+			PAGE_SIZE,
+			orderStart,
+			orderEnd,
+			deliveryStart,
+			deliveryEnd,
+			onlyEdit,
+			setTotal,
+			setLoading,
+			setStartDocInfo,
+			setRowData,
+			setQConstraints
+		);
 	};
 
-	const columns: ColumnsType<OrderRowData> = [
+	const onChangeOrderStartDate = (date: Dayjs) => {
+        console.log(date);
+        
+		setOrderStart(date);
+		setStartDocInfo(undefined);
+		setCurrentPage(1);
+
+		filterDateGetSetRowData(
+			selectedMenuCategory,
+			searchValue,
+			searchField,
+			undefined,
+			1,
+			PAGE_SIZE,
+			date,
+			orderEnd,
+			deliveryStart,
+			deliveryEnd,
+			onlyEdit,
+			setTotal,
+			setLoading,
+			setStartDocInfo,
+			setRowData,
+			setQConstraints
+		);
+	};
+
+	const onChangeOrderEndDate = (date: Dayjs) => {
+		const endDay = date ? date.endOf('day') : undefined;
+		setOrderEnd(endDay);
+		setStartDocInfo(undefined);
+		setCurrentPage(1);
+
+		filterDateGetSetRowData(
+			selectedMenuCategory,
+			searchValue,
+			searchField,
+			undefined,
+			1,
+			PAGE_SIZE,
+			orderStart,
+			endDay,
+			deliveryStart,
+			deliveryEnd,
+			onlyEdit,
+			setTotal,
+			setLoading,
+			setStartDocInfo,
+			setRowData,
+			setQConstraints
+		);
+	};
+
+	const onChangeDeliveryStartDate = (date: Dayjs) => {
+		setDeliveryStart(date);
+		setStartDocInfo(undefined);
+		setCurrentPage(1);
+
+		filterDateGetSetRowData(
+			selectedMenuCategory,
+			searchValue,
+			searchField,
+			undefined,
+			1,
+			PAGE_SIZE,
+			orderStart,
+			orderEnd,
+			date,
+			deliveryEnd,
+			onlyEdit,
+			setTotal,
+			setLoading,
+			setStartDocInfo,
+			setRowData,
+			setQConstraints
+		);
+	};
+
+	const onChangeDeliveryEndDate = (date: Dayjs) => {
+		const endDay = date ? date.endOf('day') : undefined;
+		setDeliveryEnd(endDay);
+		setStartDocInfo(undefined);
+		setCurrentPage(1);
+
+		filterDateGetSetRowData(
+			selectedMenuCategory,
+			searchValue,
+			searchField,
+			undefined,
+			1,
+			PAGE_SIZE,
+			orderStart,
+			orderEnd,
+			deliveryStart,
+			endDay,
+			onlyEdit,
+			setTotal,
+			setLoading,
+			setStartDocInfo,
+			setRowData,
+			setQConstraints
+		);
+	};
+
+	const onClickOnlyEdit = () => {
+		setOnlyEdit(true);
+		setStartDocInfo(undefined);
+		setCurrentPage(1);
+
+		filterDateGetSetRowData(
+			selectedMenuCategory,
+			searchValue,
+			searchField,
+			undefined,
+			1,
+			PAGE_SIZE,
+			orderStart,
+			orderEnd,
+			deliveryStart,
+			deliveryEnd,
+			true,
+			setTotal,
+			setLoading,
+			setStartDocInfo,
+			setRowData,
+			setQConstraints
+		);
+	};
+
+	const columns: ColumnsType<OrderItemData> = [
 		{
 			title: '주문일',
 			dataIndex: 'createdAt',
-			render: (value: Timestamp) =>
-				new Date(
-					value.seconds * 1000 + value.nanoseconds / 1000000
-				).toLocaleString(),
+			render: (value: Timestamp, record) => (
+				<div className={`${record.updatedAt && 'text-blue-500'}`}>
+					{new Date(
+						value.seconds * 1000 + value.nanoseconds / 1000000
+					).toLocaleString()}
+				</div>
+			),
 		},
 		{
 			title: '배달일',
 			dataIndex: 'deliveryDate',
-			render: (value: Timestamp) =>
-				new Date(
-					value.seconds * 1000 + value.nanoseconds / 1000000
-				).toLocaleString(),
+			render: (value: Timestamp, record) => (
+				<div className={record.updatedAt && 'text-blue-500'}>
+					{new Date(
+						value.seconds * 1000 + value.nanoseconds / 1000000
+					).toLocaleString()}
+				</div>
+			),
 		},
 		{
 			title: '주문자명',
-			dataIndex: 'ordererId',
-			render: (value) => ordererNames[value],
+			dataIndex: 'ordererName',
+			render: (value: string, record) => (
+				<div className={record.updatedAt && 'text-blue-500'}>
+					{value}
+				</div>
+			),
 		},
 		{
 			title: '주소',
-			dataIndex: 'address',
+			dataIndex: 'orderId',
+			render: (value, record) => (
+				<div className={record.updatedAt && 'text-blue-500'}>
+					{orders.find((order) => order.id === value)?.address}
+				</div>
+			),
 		},
 		{
 			title: '메뉴명',
 			dataIndex: 'menuId',
-			render: (value) => menuList.find((menu) => menu.id === value)?.name,
+			render: (value: string, record) => (
+				<div className={record.updatedAt && 'text-blue-500'}>
+					{value}
+				</div>
+			),
 		},
 		{
 			title: '수량',
 			dataIndex: 'quantity',
-			render: (value) => `${value}개`,
+			render: (value: string, record) => (
+				<div className={record.updatedAt && 'text-blue-500'}>
+					{value}개
+				</div>
+			),
 		},
 		{
 			title: '요청사항',
 			dataIndex: 'comment',
+			render: (value: string, record) => (
+				<div className={record.updatedAt && 'text-blue-500'}>
+					{value}
+				</div>
+			),
 		},
 		{
 			title: '금액',
@@ -357,7 +492,11 @@ export function OrdersTemplate() {
 				const menuInfo = menuList.find((menu) => menu.id === value);
 
 				if (menuInfo) {
-					return `${menuInfo.price * record.quantity}원`;
+					return (
+						<div className={record.updatedAt && 'text-blue-500'}>
+							{menuInfo.price * record.quantity}원
+						</div>
+					);
 				}
 			},
 		},
@@ -367,7 +506,7 @@ export function OrdersTemplate() {
 			width: 40,
 			render: (value, record) => (
 				<div
-					className='text-blue-400 hover:cursor-pointer'
+					className='text-blue-500 underline hover:cursor-pointer'
 					onClick={() => {
 						setDocId(record.id);
 						navigte(pathNames.orderDetail);
@@ -380,7 +519,7 @@ export function OrdersTemplate() {
 
 	return (
 		<CommonTemplate
-			label={'메뉴관리'}
+			label={'주문관리'}
 			allCnt={total}>
 			<div className='flex flex-col gap-[12px]'>
 				<div className='flex items-center justify-between'>
@@ -399,20 +538,73 @@ export function OrdersTemplate() {
 							onChange={onChangeSearchValue}
 						/>
 					</div>
+					<div className='flex items-center gap-[8px]'>
+						<div className='flex items-center gap-[4px]'>
+							<div className='text-xs text-gray'>주문일</div>
+							<DatePicker
+								value={orderStart}
+								onChange={onChangeOrderStartDate}
+							/>
+							<div className='text-xs text-gray'>~</div>
+							<DatePicker
+								value={orderEnd}
+								onChange={onChangeOrderEndDate}
+							/>
+						</div>
+						<div className='flex items-center gap-[4px]'>
+							<div className='text-xs text-gray'>배달일</div>
+							<DatePicker
+								value={deliveryStart}
+								onChange={onChangeDeliveryStartDate}
+							/>
+							<div className='text-xs text-gray'>~</div>
+							<DatePicker
+								value={deliveryEnd}
+								onChange={onChangeDeliveryEndDate}
+							/>
+						</div>
+						<Button
+							onClick={resetFiltersGetSetData}
+							variant='filled'
+							color='orange'>
+							전체목록
+						</Button>
+					</div>
 				</div>
-				<Radio.Group
-					value={selectedMenuCategory}
-					onChange={onSelectMenuCategory}>
-					<Radio.Button value={categoryAllValue}>전체</Radio.Button>
-					{menuCategories?.map((category) => (
-						<Radio.Button
-							key={category.id}
-							value={category.id}>
-							{category.name}
+				<div className='bg-zinc-50 p-[6px] text-xs flex flex-col gap-[4px]'>
+					<div>
+						*{' '}
+						<span className='text-blue-600 font-bold'>파란색</span>
+						으로 표시된 내역은 주문 내용이 수정된 건 입니다.
+					</div>
+					<div>
+						* 수정된 건만 조회하고자 할 경우{' '}
+						<span
+							onClick={onClickOnlyEdit}
+							className='hover:cursor-pointer text-blue-600 font-bold underline'>
+							여기
+						</span>
+						를 눌러주세요
+					</div>
+				</div>
+				<div className='flex items-center justify-between'>
+					<Radio.Group
+						value={selectedMenuCategory}
+						onChange={onSelectMenuCategory}>
+						<Radio.Button value={categoryAllValue}>
+							전체
 						</Radio.Button>
-					))}
-				</Radio.Group>
-				<Table<OrderRowData>
+						{menuCategories?.map((category) => (
+							<Radio.Button
+								key={category.id}
+								value={category.id}>
+								{category.name}
+							</Radio.Button>
+						))}
+					</Radio.Group>
+					<ExcelButton qConstraints={qConstraints} />
+				</div>
+				<Table<OrderItemData>
 					size={'small'}
 					className={'hey-table'}
 					columns={columns}
@@ -420,9 +612,9 @@ export function OrdersTemplate() {
 					dataSource={rowData}
 					loading={loading}
 					pagination={false}
-					scroll={{ y: 600 }} // Enables vertical scroll with 400px height
+					scroll={{ y: 380 }} // Enables vertical scroll with 400px height
 				/>
-				<div className='w-full flex justify-center mt-[36px]'>
+				<div className='w-full flex justify-center'>
 					<Pagination
 						current={currentPage}
 						total={total}
@@ -436,267 +628,126 @@ export function OrdersTemplate() {
 	);
 }
 
-const getCategoryMenuIds = async (categoryId: string) => {
-	const menuQuery = query(
-		collection(db, collNameMenus),
-		where('categoryId', '==', categoryId)
-	);
-	const menuSnapshot = await getDocs(menuQuery);
-
-	if (menuSnapshot.empty) {
-		console.log(`카테고리가 ${categoryId}인 메뉴가 없습니다.`);
-		return;
+const setQConstraintsByDeliveryDate = async (
+	queryConstraints: QueryConstraint[],
+	orderStart: Dayjs | undefined,
+	orderEnd: Dayjs | undefined,
+	deliveryStart: Dayjs | undefined,
+	deliveryEnd: Dayjs | undefined
+) => {
+	if (orderStart) {
+		queryConstraints.push(
+			where('createdAt', '>=', Timestamp.fromDate(orderStart.toDate()))
+		);
+	}
+	if (orderEnd) {
+		queryConstraints.push(
+			where('createdAt', '<=', Timestamp.fromDate(orderEnd.toDate()))
+		);
+	}
+	if (deliveryStart) {
+		queryConstraints.push(
+			where(
+				'deliveryDate',
+				'>=',
+				Timestamp.fromDate(deliveryStart.toDate())
+			)
+		);
+	}
+	if (deliveryEnd) {
+		queryConstraints.push(
+			where(
+				'deliveryDate',
+				'<=',
+				Timestamp.fromDate(deliveryEnd.toDate())
+			)
+		);
 	}
 
-	const validMenuIds = menuSnapshot.docs.map((doc) => doc.id);
-
-	return validMenuIds;
-};
-
-const getOrdererIdsContainNameVal = async (value: string) => {
-	const queryConstraints = [
-		orderBy('name'),
-		startAt(value),
-		endAt(value + '\uf8ff'),
-	];
-
-	//users
-	const usersQuery = query(
-		collection(db, collNameUsers),
-		...queryConstraints
-	);
-	const usersSnapshot = await getDocs(usersQuery);
-
-	//guests
-	const guestsQuery = query(
-		collection(db, collNameGuests),
-		...queryConstraints
-	);
-	const guestsSnapshot = await getDocs(guestsQuery);
-
-	//둘다 없는 경우
-	if (usersSnapshot.empty && guestsSnapshot.empty) {
-		console.log('검색된 주문자가 없습니다.');
-		return;
+	if (orderStart || orderEnd) {
+		queryConstraints.push(orderBy('createdAt'));
 	}
-
-	const userIds = !usersSnapshot.empty
-		? usersSnapshot.docs.map((doc) => doc.id)
-		: [];
-
-	const guestIds = !guestsSnapshot.empty
-		? guestsSnapshot.docs.map((doc) => doc.id)
-		: [];
-
-	const ordererIds = [...userIds, ...guestIds];
-
-	return ordererIds;
-};
-
-const getMenuIdsContainMenuVal = async (value: string) => {
-	const queryConstraints = [
-		orderBy('name'),
-		startAt(value),
-		endAt(value + '\uf8ff'),
-	];
-
-	const menusQuery = query(
-		collection(db, collNameMenus),
-		...queryConstraints
-	);
-	const menusSnapshot = await getDocs(menusQuery);
-
-	//둘다 없는 경우
-	if (menusSnapshot.empty) {
-		console.log('검색된 메뉴명이 없습니다.');
-		return;
+	if (deliveryStart || deliveryEnd) {
+		queryConstraints.push(orderBy('deliveryDate'));
 	}
-
-	const menuIds = menusSnapshot.docs.map((doc) => doc.id);
-
-	return menuIds;
 };
 
-const getOrderIdsByOrdererIds = async (ordererIds: string[]) => {
-	const ordersQuery = query(
-		collection(db, collNameOrders),
-		where('ordererId', 'in', ordererIds)
-	);
-	const ordersSnapshot = await getDocs(ordersQuery);
-
-	if (ordersSnapshot.empty) {
-		console.log('해당 주문자가 포함된 주문이 없습니다.');
-		return;
-	}
-
-	return ordersSnapshot.docs.map((doc) => doc.id);
-};
-
-const fetchFilteredSearchOrdererName = async (
-	categoryId: string | undefined,
-	searchName: string | undefined,
+const filterDateGetSetRowData = async (
+	selectedMenuCategory: string,
+	searchValue: string | undefined,
+	searchField: string,
 	startDocInfo: StartDocInfo | undefined,
 	page: number,
 	pageSize: number,
-	setLoading: (value: boolean) => void,
+	orderStart: Dayjs | undefined,
+	orderEnd: Dayjs | undefined,
+	deliveryStart: Dayjs | undefined,
+	deliveryEnd: Dayjs | undefined,
+	onlyEdit: boolean,
 	setTotal: Dispatch<SetStateAction<number>>,
-	setStartDocInfo: React.Dispatch<
-		React.SetStateAction<StartDocInfo | undefined>
-	>,
-	setRowData: (value: React.SetStateAction<OrderRowData[]>) => void
+	setLoading: Dispatch<SetStateAction<boolean>>,
+	setStartDocInfo: Dispatch<SetStateAction<StartDocInfo | undefined>>,
+	setRowData: Dispatch<React.SetStateAction<OrderItemData[]>>,
+	setQConstraints: Dispatch<SetStateAction<QueryConstraint[]>>
 ) => {
-	try {
-		// 1️⃣ 카테고리의 menuId 목록 가져오기
-		const validMenuIds = categoryId
-			? await getCategoryMenuIds(categoryId)
-			: undefined;
+	const queryConstraints: QueryConstraint[] = [];
 
-		let orderIds = undefined;
+	const isCreatedAtOrder = orderStart || orderEnd ? true : false;
+    
 
-		if (searchName) {
-			// 2️⃣ 주문자 ID 찾기 (users, guests 컬렉션)
-			const ordererIds = await getOrdererIdsContainNameVal(searchName);
-
-			if (ordererIds) {
-				// 3️⃣ 해당 주문자의 orderId 찾기 (orders 컬렉션)
-				orderIds = await getOrderIdsByOrdererIds(ordererIds);
-			}
-			if (!orderIds) {
-				setTotal(0);
-				setRowData([]);
-				return;
-			}
-		}
-
-		const queryConstraints = [];
-
-		if (orderIds) {
-			queryConstraints.push(where('orderId', 'in', orderIds));
-		}
-		if (validMenuIds) {
-			queryConstraints.push(where('menuId', 'in', validMenuIds));
-		}
-
-		// 4️⃣ 전체 개수 가져오기
-		const totalCountQuery = query(
-			collection(db, collNameOrderItems),
-			...queryConstraints
+	if (orderStart || orderEnd || deliveryStart || deliveryEnd) {
+		setQConstraintsByDeliveryDate(
+			queryConstraints,
+			orderStart,
+			orderEnd,
+			deliveryStart,
+			deliveryEnd
 		);
-		const totalCountSnapshot = await getCountFromServer(totalCountQuery);
-		const totalCount = totalCountSnapshot.data().count;
-		setTotal(totalCount);
-
-		// 5️⃣ 주문 아이템 가져오기 (menuId + orderId 필터링) + 페이지네이션 적용
-		const orderItemsData = await fetchTableData(
-			collNameOrderItems,
-			startDocInfo,
-			pageSize,
-			page,
-			totalCount,
-			setLoading,
-			undefined,
-			setStartDocInfo,
-			[...queryConstraints, orderBy('createdAt', 'desc')]
-		);
-		if (orderItemsData) {
-			getSetRowDataWithOrderItems(orderItemsData, setRowData);
-		} else {
-			setRowData([]);
-		}
-	} catch (error) {
-		console.error('🔥 Error fetching order items:', error);
-		return;
 	}
-};
 
-const getSetRowDataWithOrderItems = async (
-	orderItems: OrderItemData[],
-	setRowData: (value: React.SetStateAction<OrderRowData[]>) => void
-) => {
-	//order Item 기준으로 order 정보를 채워서 row data로 넣기
-	const orderItemRowData = await Promise.all(
-		orderItems.map(async (item) => {
-			const order = await fetchDataWithDocId(
-				collNameOrders,
-				item.orderId
-			);
-			return { ...order, ...item };
-		})
+	if (onlyEdit) {
+		queryConstraints.push(where('updatedAt', '>', new Date(0)));
+		queryConstraints.push(orderBy('updatedAt'));
+	}
+
+	//menu category
+	if (selectedMenuCategory !== categoryAllValue) {
+		queryConstraints.push(where('categoryId', '==', selectedMenuCategory));
+		queryConstraints.push(orderBy('categoryId'));
+	}
+
+	//search
+	if (searchValue) {
+		queryConstraints.push(where(searchField, '>=', searchValue));
+		queryConstraints.push(where(searchField, '<=', searchValue + '\uf8ff'));
+		queryConstraints.push(orderBy(searchField));
+	}
+
+	// 4️⃣ 전체 개수 가져오기
+	const totalCountQuery = query(
+		collection(db, collNameOrderItems),
+		...queryConstraints
 	);
 
-	setRowData(orderItemRowData);
-};
+	const totalCountSnapshot = await getCountFromServer(totalCountQuery);
+	const totalCount = totalCountSnapshot.data().count;
+	setTotal(totalCount);
 
-const fetchFilteredSearchMenuName = async (
-	categoryId: string | undefined,
-	searchName: string | undefined,
-	startDocInfo: StartDocInfo | undefined,
-	page: number,
-	pageSize: number,
-	setLoading: (value: boolean) => void,
-	setTotal: Dispatch<SetStateAction<number>>,
-	setStartDocInfo: React.Dispatch<
-		React.SetStateAction<StartDocInfo | undefined>
-	>,
-	setRowData: (value: React.SetStateAction<OrderRowData[]>) => void
-) => {
-	try {
-		// 1️⃣ 카테고리의 menuId 목록 가져오기
-		let validMenuIds = categoryId
-			? await getCategoryMenuIds(categoryId)
-			: undefined;
+	const finalConstraints = isCreatedAtOrder
+		? [...queryConstraints]
+		: [...queryConstraints, orderBy('createdAt', 'desc')];
 
-		if (searchName) {
-			// 2️⃣ 메뉴명의 메뉴 ID 찾기 (menus 컬렉션)
-			const menuNameIds = await getMenuIdsContainMenuVal(searchName);
+	setQConstraints(finalConstraints);
 
-			if (menuNameIds && validMenuIds) {
-				// 3️⃣ validMenuIds에서 menuIds 교집합
-				const categoryMenuIds = [...validMenuIds];
-				validMenuIds = menuNameIds.filter((id) =>
-					categoryMenuIds.includes(id)
-				);
-			}
-
-			if (!menuNameIds || !validMenuIds || validMenuIds.length < 1) {
-				setTotal(0);
-				setRowData([]);
-				return;
-			}
-		}
-
-		const queryConstraints = validMenuIds
-			? [where('menuId', 'in', validMenuIds)]
-			: [];
-
-		// 4️⃣ 전체 개수 가져오기
-		const totalCountQuery = query(
-			collection(db, 'orderItems'),
-			...queryConstraints
-		);
-		const totalCountSnapshot = await getCountFromServer(totalCountQuery);
-		const totalCount = totalCountSnapshot.data().count;
-		setTotal(totalCount);
-
-		// 5️⃣ 주문 아이템 가져오기 (menuId + orderId 필터링) + 페이지네이션 적용
-		const orderItemsData = await fetchTableData(
-			collNameOrderItems,
-			startDocInfo,
-			pageSize,
-			page,
-			totalCount,
-			setLoading,
-			undefined,
-			setStartDocInfo,
-			[...queryConstraints, orderBy('createdAt', 'desc')]
-		);
-		if (orderItemsData) {
-			getSetRowDataWithOrderItems(orderItemsData, setRowData);
-		} else {
-			setRowData([]);
-		}
-	} catch (error) {
-		console.error('🔥 Error fetching order items:', error);
-		return;
-	}
+	await fetchTableData(
+		collNameOrderItems,
+		startDocInfo,
+		pageSize,
+		page,
+		totalCount,
+		setLoading,
+		setRowData,
+		setStartDocInfo,
+		finalConstraints
+	);
 };

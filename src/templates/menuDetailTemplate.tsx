@@ -9,6 +9,8 @@ import { useDocIdStore } from 'stores/docIdStore';
 import { useNavigate } from 'react-router-dom';
 import {
 	addData,
+	deleteData,
+	deleteFile,
 	fetchCollectionData,
 	fetchDataWithDocId,
 	fetchFileData,
@@ -22,21 +24,32 @@ import { LabelDropdown, Option } from 'components/LabelDropdown';
 import { v4 as uuidv4 } from 'uuid';
 import { Timestamp } from 'firebase/firestore';
 import { UploadButton } from 'components/UploadButton';
+import { pathNames } from 'const/pathNames';
 
 export function MenuDetailTemplate() {
 	const [data, setData] = useState<MenuData>();
 	const [menuCategoryOptions, setMenuCategoryOptions] = useState<Option[]>();
+	const [menuNames, setMenuNames] = useState<string[]>([]);
 	const [nameInput, setNameInput] = useState<string>('');
 	const [priceInput, setPriceInput] = useState<number | string>(0);
 	const [descInput, setDescInput] = useState<string>('');
 	const [fileList, setFileList] = useState<UploadFile[]>([]);
 	const [previewVisible, setPreviewVisible] = useState(false); // 미리보기 모달 표시 여부
 	const [previewImage, setPreviewImage] = useState<string>(''); // 미리보기 이미지 URL
+
+	const [messageApi, contextHolder] = message.useMessage();
+
 	const docId = useDocIdStore((state) => state.id);
+	const setDocId = useDocIdStore((state) => state.setId);
 	const navigate = useNavigate();
 
 	useEffect(() => {
 		getSetInitData(docId);
+
+		//when exiting the page
+		return () => {
+			setDocId(undefined);
+		};
 	}, [docId]);
 
 	const getSetInitData = async (docId: string | undefined) => {
@@ -59,6 +72,14 @@ export function MenuDetailTemplate() {
 				createSetInitMenuData(categoryOptions);
 			}
 		}
+	};
+
+	const getAllMenuNames = async () => {
+		const allMenu = (await fetchCollectionData(collNameMenus)) as
+			| MenuData[]
+			| undefined;
+
+		return allMenu?.map((menu) => menu.name);
 	};
 
 	const createSetInitMenuData = (menuCategoryOptions: Option[]) => {
@@ -107,7 +128,7 @@ export function MenuDetailTemplate() {
 					return { ...prev };
 				}
 			});
-            setPriceInput(numVal);
+			setPriceInput(numVal);
 		}
 	};
 
@@ -117,48 +138,64 @@ export function MenuDetailTemplate() {
 		setPreviewVisible(true); // 모달 표시
 	};
 
-	const onClickAdd = () => {
+	const onClickAdd = async (messageObj: string) => {
 		if (data) {
 			const uploadingData = { ...data };
 
-			fileList.map((file, idx) => {
-				const path = `${uploadingData.categoryId}_${idx + 1}`;
-				uploadingData.imagePaths.push(path);
-				uploadFileData(file, path);
-			});
+			//겹치는 이름이 없는지 확인
+			if (!(await isNameUnique(uploadingData))) {
+				return;
+			}
 
-			if (checkAllValuesFilled(uploadingData)) {
-				addData(collNameMenus, uploadingData);
+			//모든 항목이 채워져있는지 확인
+			if (checkAllValuesFilled(uploadingData, fileList)) {
+				//주문내역에서 검색에 용이하게 하기 위해 id랑 name을 통일
+				uploadingData.id = uploadingData.name;
+
+				//사진 파일 저장
+				let idx = 1;
+				for (const file of fileList) {
+					if (!uploadingData.imagePaths.includes(file.name)) {
+						const path = `${uploadingData.name}_${idx++}`;
+						await uploadFileData(file, path);
+						uploadingData.imagePaths.push(path);
+					}
+				}
+
+				//데이터 저장
+				if (await addData(collNameMenus, uploadingData)) {
+					message.success(`${messageObj} 완료하였습니다.`);
+				} else {
+					message.error(`${messageObj} 실패하였습니다.`);
+				}
 			} else {
 				message.error('모든 항목을 채워주세요.');
 				return;
 			}
 		}
-		navigate(-1);
+		navigate(pathNames.menusManagement);
 	};
 
-	const onClickEdit = () => {
+	const onClickEdit = async () => {
 		if (data) {
-			const uploadingData = { ...data };
-			uploadingData.imagePaths = [];
-			uploadingData.updatedAt = Timestamp.now();
-
-			fileList.map((file, idx) => {
-				const path = `${uploadingData.categoryId}_${idx + 1}`;
-				uploadingData.imagePaths.push(path);
-				uploadFileData(file, path);
-			});
-			if (checkAllValuesFilled(uploadingData)) {
-				updateData(collNameMenus, uploadingData);
-			} else {
-				message.error('모든 항목을 채워주세요.');
-				return;
-			}
+			//기존 데이터 삭제
+			// await deleteMenuData(data);
+			await deleteData(collNameMenus, data.id);
+			await onClickAdd('수정을');
 		}
-		navigate(-1);
 	};
 
-	const checkAllValuesFilled = (data: MenuData) => {
+	// const deleteMenuData = async (data: MenuData) => {
+	// 	await deleteData(collNameMenus, data.id);
+	// 	for (const path of data.imagePaths) {
+	// 		await deleteFile(path);
+	// 	}
+	// };
+
+	const checkAllValuesFilled = (
+		data: MenuData,
+		fileList: UploadFile<any>[]
+	) => {
 		const keys = Object.keys(data);
 		let isAllFilled = true;
 
@@ -169,114 +206,129 @@ export function MenuDetailTemplate() {
 			}
 		}
 
-		if (data.imagePaths.length < 1) {
+		if (fileList.length < 1) {
 			isAllFilled = false;
 		}
 
 		return isAllFilled;
 	};
 
+	const isNameUnique = async (data: MenuData) => {
+		const allMenuNames = await getAllMenuNames();
+
+		if (allMenuNames?.includes(data.name)) {
+			message.error(
+				'이미 존재하는 메뉴명입니다. 다른 메뉴명을 사용해주세요.'
+			);
+			return false;
+		}
+		return true;
+	};
+
 	return (
-		<CommonTemplate label={docId ? '메뉴정보' : '메뉴추가'}>
-			<div className='flex flex-col gap-[18px]'>
-				<div className='flex flex-col gap-[18px] border-b border-stone-100 pb-[24px]'>
-					<LabelDropdown
-						label={'종류'}
-						options={menuCategoryOptions}
-						value={
-							menuCategoryOptions?.find(
-								(opt) => opt.value === data?.categoryId
-							)?.value
-						}
-						onChange={(value) =>
-							setData((prev) => {
-								if (prev) {
-									prev.categoryId = value;
-									return { ...prev };
-								}
-							})
-						}
-					/>
-					<LabelTextField
-						label={'메뉴명'}
-						value={nameInput}
-						onChange={(e) => setNameInput(e.target.value)}
-						onBlur={(e) =>
-							setData((prev) => {
-								if (prev) {
-									prev.name = e.target.value;
-									return { ...prev };
-								}
-							})
-						}
-					/>
-					<LabelTextField
-						label={'금액'}
-						value={priceInput}
-						onChange={(e) => setPriceInput(e.target.value)}
-						onBlur={onBlurPrice}
-						inputLabel='원'
-					/>
-					<LabelTextField
-						label={'메뉴 설명'}
-						value={descInput}
-						onChange={(e) => {
-							setDescInput(e.target.value);
-						}}
-						onBlur={(e) =>
-							setData((prev) => {
-								if (prev) {
-									prev.description = e.target.value;
-									return { ...prev };
-								}
-							})
-						}
-						inputStyle={{ width: 400, height: 150 }}
-					/>
-					<div className='flex items-center gap-[12px]'>
-						<div className='text-xs text-gray w-[90px]'>
-							메뉴 이미지
-						</div>
-						<Upload
-							listType='picture-card'
-							fileList={fileList}
-							onChange={(info) => setFileList(info.fileList)}
-							customRequest={({ file, onSuccess }) => {
-								onSuccess?.({}, file); // 업로드 성공을 시뮬레이트
+		<>
+			{contextHolder}
+			<CommonTemplate label={docId ? '메뉴정보' : '메뉴추가'}>
+				<div className='flex flex-col gap-[18px]'>
+					<div className='flex flex-col gap-[18px] border-b border-stone-100 pb-[24px]'>
+						<LabelDropdown
+							label={'종류'}
+							options={menuCategoryOptions}
+							value={
+								menuCategoryOptions?.find(
+									(opt) => opt.value === data?.categoryId
+								)?.value
+							}
+							onChange={(value) =>
+								setData((prev) => {
+									if (prev) {
+										prev.categoryId = value;
+										return { ...prev };
+									}
+								})
+							}
+						/>
+						<LabelTextField
+							label={'메뉴명'}
+							value={nameInput}
+							onChange={(e) => setNameInput(e.target.value)}
+							onBlur={(e) =>
+								setData((prev) => {
+									if (prev) {
+										prev.name = e.target.value;
+										return { ...prev };
+									}
+								})
+							}
+						/>
+						<LabelTextField
+							label={'금액'}
+							value={priceInput}
+							onChange={(e) => setPriceInput(e.target.value)}
+							onBlur={onBlurPrice}
+							inputLabel='원'
+						/>
+						<LabelTextField
+							label={'메뉴 설명'}
+							value={descInput}
+							onChange={(e) => {
+								setDescInput(e.target.value);
 							}}
-							onPreview={handlePreview} // 미리보기 핸들러 설정
-							accept='image/*'>
-							<UploadButton />
-						</Upload>
+							onBlur={(e) =>
+								setData((prev) => {
+									if (prev) {
+										prev.description = e.target.value;
+										return { ...prev };
+									}
+								})
+							}
+							inputStyle={{ width: 400, height: 150 }}
+						/>
+						<div className='flex items-center gap-[12px]'>
+							<div className='text-xs text-gray w-[90px]'>
+								메뉴 이미지
+							</div>
+							<Upload
+								listType='picture-card'
+								fileList={fileList}
+								onChange={(info) => setFileList(info.fileList)}
+								customRequest={({ file, onSuccess }) => {
+									onSuccess?.({}, file); // 업로드 성공을 시뮬레이트
+								}}
+								onPreview={handlePreview} // 미리보기 핸들러 설정
+								accept='image/*'>
+								<UploadButton />
+							</Upload>
+						</div>
 					</div>
+					<div className='flex items-center gap-[8px] self-end'>
+						<Button
+							onClick={() => {
+								docId ? onClickEdit() : onClickAdd('추가를');
+							}}
+							variant={'solid'}
+							color='orange'
+							style={{ width: 'fit-content' }}>
+							{docId ? '수정' : '추가'}
+						</Button>
+						<Button
+							onClick={() => navigate(-1)}
+							style={{ width: 'fit-content' }}>
+							목록
+						</Button>
+					</div>
+					<Modal
+						open={previewVisible}
+						footer={null}
+						onCancel={() => setPreviewVisible(false)}>
+						<img
+							alt='preview'
+							style={{ width: '100%' }}
+							src={previewImage}
+						/>
+					</Modal>
 				</div>
-				<div className='flex items-center gap-[8px] self-end'>
-					<Button
-						onClick={() => {
-							docId ? onClickEdit() : onClickAdd();
-						}}
-						variant={'solid'}
-						color='orange'
-						style={{ width: 'fit-content' }}>
-						{docId ? '수정' : '추가'}
-					</Button>
-					<Button
-						onClick={() => navigate(-1)}
-						style={{ width: 'fit-content' }}>
-						목록
-					</Button>
-				</div>
-				<Modal
-					open={previewVisible}
-					footer={null}
-					onCancel={() => setPreviewVisible(false)}>
-					<img
-						alt='preview'
-						style={{ width: '100%' }}
-						src={previewImage}
-					/>
-				</Modal>
-			</div>
-		</CommonTemplate>
+			</CommonTemplate>
+		</>
 	);
 }

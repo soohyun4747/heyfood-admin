@@ -5,7 +5,7 @@ export const pathNames = {
 	menusManagement: '/menus',
 	menuDetail: '/menus/detail',
 	ordersManagement: '/orders',
-	orderDetail: '/order',
+	orderDetail: '/orders/detail',
 	popupsManagement: '/popups',
 	popupDetail: '/popups/detail',
 	bannersManagement: '/banners',

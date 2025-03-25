@@ -17,15 +17,13 @@ import { PAGE_SIZE } from 'const/table';
 export interface UserData {
 	id: string;
 	name: string;
-	email: string;
+	email?: string;
 	phone: string;
 	address: string;
 	addressDetail: string;
 	createdAt: Timestamp;
 	updatedAt?: Timestamp;
 }
-
-export interface GuestData extends Omit<UserData, 'email'> {}
 
 const searchFieldOptions = [
 	{ value: 'name', label: '이름' },
@@ -38,7 +36,7 @@ export const collNameUsers = 'users';
 
 export function UsersTemplate() {
 	const [rowData, setRowData] = useState<UserData[]>([]);
-	const [loading, setLoading] = useState(false);
+	const [loading, setLoading] = useState(true);
 	const [startDocInfo, setStartDocInfo] = useState<StartDocInfo>();
 	const [searchStartDocInfo, setSearchStartDocInfo] =
 		useState<StartDocInfo>();
@@ -240,9 +238,9 @@ export function UsersTemplate() {
 					dataSource={rowData}
 					loading={loading}
 					pagination={false}
-					scroll={{ y: 600 }} // Enables vertical scroll with 400px height
+					scroll={{ y: 450 }} // Enables vertical scroll with 400px height
 				/>
-				<div className='w-full flex justify-center mt-[36px]'>
+				<div className='w-full flex justify-center'>
 					<Pagination
 						current={currentPage}
 						total={total}

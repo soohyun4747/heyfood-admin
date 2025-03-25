@@ -51,9 +51,9 @@ export function CommonTemplate({
 				<div className='flex gap-[4px] items-center'>
 					<img
 						src='/logo2.png'
-						width={80}
+						width={120}
 					/>
-					<div className='text-xs text-gray'>관리자페이지</div>
+					<div className='text-gray-light'>관리자페이지</div>
 				</div>
 				<div
 					className='text-xs text-gray-light hover:cursor-pointer'

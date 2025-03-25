@@ -13,6 +13,7 @@ import { Timestamp } from 'firebase/firestore';
 import {
 	Button,
 	Input,
+	message,
 	Modal,
 	Pagination,
 	Radio,
@@ -38,8 +39,6 @@ export interface MenuData {
 	description: string;
 	price: number;
 	imagePaths: string[];
-	createdAt: Timestamp;
-	updatedAt?: Timestamp;
 }
 
 const searchFieldOptions = [{ value: 'name', label: '메뉴명' }];
@@ -53,7 +52,7 @@ export function MenusTemplate() {
 	const [total, setTotal] = useState(0);
 	const [startDocInfo, setStartDocInfo] = useState<StartDocInfo>();
 	const [currentPage, setCurrentPage] = useState(1);
-	const [loading, setLoading] = useState(false);
+	const [loading, setLoading] = useState(true);
 	const [rowData, setRowData] = useState<MenuData[]>([]);
 	const [searchValue, setSearchValue] = useState<string>();
 	const [menuCategories, setMenuCategories] = useState<MenuCategory[]>();
@@ -160,11 +159,12 @@ export function MenusTemplate() {
 		);
 	};
 
-	const onDelete = () => {
+	const onDelete = async () => {
 		if (deleteMenu) {
 			deleteData(collNameMenus, deleteMenu?.id);
 			setDeleteMenu(undefined);
-			initFetchData();
+			await initFetchData();
+			message.success('삭제를 완료하였습니다.');
 		}
 	};
 
@@ -191,7 +191,7 @@ export function MenusTemplate() {
 			render: (value) => `${value.toLocaleString('en-US')}원`,
 		},
 		{
-			title: '등록일',
+			title: '등록일/수정일',
 			dataIndex: 'createdAt',
 			render: (value: Timestamp) =>
 				new Date(
@@ -254,7 +254,6 @@ export function MenusTemplate() {
 						메뉴추가
 					</Button>
 				</div>
-
 				<Radio.Group
 					value={selectedMenuCategory}
 					onChange={onSelectMenuCategory}>
@@ -275,9 +274,9 @@ export function MenusTemplate() {
 					dataSource={rowData}
 					loading={loading}
 					pagination={false}
-					scroll={{ y: 600 }} // Enables vertical scroll with 400px height
+					scroll={{ y: 450 }} // Enables vertical scroll with 400px height
 				/>
-				<div className='w-full flex justify-center mt-[36px]'>
+				<div className='w-full flex justify-center'>
 					<Pagination
 						current={currentPage}
 						total={total}

@@ -4,23 +4,47 @@ import {
 	addDoc,
 	Timestamp,
 } from 'firebase/firestore';
-import { fakerKO as faker } from "@faker-js/faker";
-import { GuestData, UserData } from 'templates/UsersTemplate';
+import { fakerKO as faker } from '@faker-js/faker';
+import { UserData } from 'templates/UsersTemplate';
 import { OrderData, OrderItemData } from 'templates/OrdersTemplate';
 import { db } from 'config/firebase';
 
+const geteCategoryId = (menuId: string) => {
+	switch (menuId) {
+		case '김밥샌드위치':
+		case '김밥닭강정':
+			return '김밥도시락';
+
+		case '소고기덮밥':
+		case '제육덮밥':
+		case '불고기덮밥':
+			return '덮밥도시락';
+
+		case '참치김밥':
+		case '돈까스김밥':
+		case '델리김밥':
+			return '김밥한줄';
+
+		case '풍성다과박스':
+		case '알찬다과박스':
+			return '다과박스';
+		default:
+			return '김밥도시락F'
+	}
+};
+
 // 🔹 메뉴 ID 배열 (사용자가 제공)
 const menuIds = [
-	'07d903e3-34aa-4a0f-a29e-01a53c3ab15d',
-	'1d44c14a-7d76-403b-b730-60771f426c31',
-	'31e8c0f6-c2a0-4e0b-b32b-d2274712f9ed',
-	'3b81538a-e71f-4ccb-a902-90a873357ec0',
-	'437843b7-f050-46a1-ae12-7f883d5bce4c',
-	'541e8f1e-166b-4389-9575-95d135a6929b',
-	'fef574e8-e537-491b-81ac-6f9584500758',
-	'e8cec960-5cf7-415a-95fd-ead747432da6',
-	'e87b76df-543a-48ae-9ab5-197cab4ebfa2',
-	'e42e73b7-8fef-472b-9c4c-df6d67e7af9b',
+	'김밥샌드위치',
+	'김밥닭강정',
+	'소고기덮밥',
+	'제육덮밥',
+	'불고기덮밥',
+	'참치김밥',
+	'돈까스김밥',
+	'델리김밥',
+	'풍성다과박스',
+	'알찬다과박스',
 ];
 
 export const generateRandomOrderData = async (
@@ -28,25 +52,25 @@ export const generateRandomOrderData = async (
 	orderCount: number = 5,
 	orderItemsPerOrder: number = 3
 ) => {
-	// const usersRef = collection(db, 'users');
-	const guestsRef = collection(db, 'guests');
+	const usersRef = collection(db, 'users');
+	// const guestsRef = collection(db, 'guests');
 	const ordersRef = collection(db, 'orders');
 	const orderItemsRef = collection(db, 'orderItems');
 
-	const userIds: string[] = [];
+	const users: UserData[] = [];
 	const helpers = faker.helpers as any;
 
 	console.log('🔹 [Step 1] Adding Users...');
 	await Promise.all(
 		Array.from({ length: userCount }).map(async (_, i) => {
-			const user: Omit<GuestData, 'id'> = {
+			const user: Omit<UserData, 'id'> = {
 				name: faker.person.fullName(),
-				// email: faker.internet.email(),
+				email: faker.internet.email(),
 				phone: `010-${faker.number.int({
 					min: 1000,
 					max: 9999,
 				})}-${faker.number.int({ min: 1000, max: 9999 })}`,
-				address: `${faker.location.city()} ${faker.location.street()}`,
+				address: `부산광역시 ${faker.location.city()} ${faker.location.street()}`, // 랜덤 한국 주소
 				addressDetail: `${faker.number.int({
 					min: 1,
 					max: 30,
@@ -54,8 +78,8 @@ export const generateRandomOrderData = async (
 				createdAt: Timestamp.fromDate(faker.date.recent()),
 			};
 
-			const docRef = await addDoc(guestsRef, user);
-			userIds.push(docRef.id);
+			const docRef = await addDoc(usersRef, user);
+			users.push({ ...user, id: docRef.id });
 			console.log(`✅ User ${i + 1} added: ${docRef.id}`);
 		})
 	);
@@ -63,15 +87,17 @@ export const generateRandomOrderData = async (
 	const orderIds: string[] = [];
 
 	console.log('\n🔹 [Step 2] Adding Orders...');
+	const orderers: UserData[] = [];
+
 	await Promise.all(
 		Array.from({ length: orderCount }).map(async (_, i) => {
+			orderers.push(helpers.arrayElement(users));
 			const order: Omit<OrderData, 'id'> = {
-				ordererId: helpers.arrayElement(userIds),
-				ordererType: helpers.arrayElement(['guest']),
-				deliveryDate: Timestamp.fromDate(faker.date.future()),
+				ordererId: orderers[i].id,
+				ordererType: helpers.arrayElement(['user']),
 				address: faker.location.streetAddress(),
 				addressDetail: faker.location.secondaryAddress(),
-				paymentMethod: helpers.arrayElement([
+				paymentMethodId: helpers.arrayElement([
 					'offlinePayment',
 					'onlinePayment',
 					'bankTransfer',
@@ -90,10 +116,15 @@ export const generateRandomOrderData = async (
 		orderIds.map(async (orderId, i) => {
 			await Promise.all(
 				Array.from({ length: orderItemsPerOrder }).map(async (_, j) => {
+					const menuId = helpers.arrayElement(menuIds);
+
 					const orderItem: Omit<OrderItemData, 'id'> = {
 						orderId,
-						menuId: helpers.arrayElement(menuIds),
+						ordererName: orderers[i].name,
+						menuId: menuId,
+						categoryId: geteCategoryId(menuId),
 						quantity: faker.number.int({ min: 1, max: 5 }),
+						deliveryDate: Timestamp.fromDate(faker.date.future()),
 						createdAt: Timestamp.fromDate(faker.date.recent()),
 					};
 

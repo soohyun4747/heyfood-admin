@@ -5,7 +5,7 @@ export function LabelValue({
 	value,
 }: {
 	label: string;
-	value?: string;
+	value?: string | number;
 }) {
 	return (
 		<div className='flex items-center gap-[12px]'>

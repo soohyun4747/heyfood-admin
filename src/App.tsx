@@ -11,6 +11,7 @@ import { MenusTemplate } from 'templates/MenusTemplate';
 import { MenuDetailTemplate } from 'templates/MenuDetailTemplate';
 import { OrdersTemplate } from 'templates/OrdersTemplate';
 import { generateRandomOrderData } from 'test/order';
+import { OrderDetailTemplate } from 'templates/OrderDetailTemplate';
 
 function App() {
 	const navigate = useNavigate();
@@ -70,6 +71,10 @@ function App() {
 			<Route
 				path={pathNames.ordersManagement}
 				element={<OrdersTemplate />}
+			/>
+			<Route
+				path={pathNames.orderDetail}
+				element={<OrderDetailTemplate />}
 			/>
 		</Routes>
 	);

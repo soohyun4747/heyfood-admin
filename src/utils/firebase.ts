@@ -1,6 +1,5 @@
 import { db, storage } from 'config/firebase';
 import {
-	addDoc,
 	collection,
 	deleteDoc,
 	doc,
@@ -22,9 +21,15 @@ import {
 	where,
 } from 'firebase/firestore';
 import { Dispatch, SetStateAction } from 'react';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import {
+	deleteObject,
+	getDownloadURL,
+	ref,
+	uploadBytes,
+} from 'firebase/storage';
 import { message, UploadFile } from 'antd';
 import { UploadFileStatus } from 'antd/es/upload/interface';
+import { getOriginFileObj } from './image';
 
 export interface StartDocInfo {
 	pageIdx: number;
@@ -167,7 +172,7 @@ export const fetchTableData = async (
 		setLoading(false);
 		return newData;
 	} catch (error) {
-		console.error('Error fetching users:', error);
+		console.error('Error fetching data:', error);
 		setLoading(false);
 	}
 };
@@ -198,7 +203,7 @@ export const fetchSearchData = async (
 	setStartDocInfo: React.Dispatch<
 		React.SetStateAction<StartDocInfo | undefined>
 	>,
-	setTotalCount: (value: React.SetStateAction<number>) => void, // For setting total count
+	setTotalCount: (value: React.SetStateAction<number>) => void // For setting total count
 ) => {
 	const qConstraintsFilter = filter
 		? [where(filter.field, '==', filter.value)]
@@ -291,10 +296,13 @@ export const fetchCollectionData = async (
 
 export const uploadFileData = async (file: UploadFile, path: string) => {
 	const fileRef = ref(storage, path); // Firebase Storage의 "uploads" 폴더에 파일 저장
+
 	try {
 		// Firebase Storage에 파일 업로드
 		if (file.originFileObj) {
 			await uploadBytes(fileRef, file.originFileObj);
+		} else {
+			console.error('no originFileObj in the file');
 		}
 	} catch (error) {
 		console.error(error);
@@ -308,10 +316,10 @@ export const addData = async (collectionName: string, data: any) => {
 		const { id, ...dataWithoutId } = data;
 
 		await setDoc(docRef, dataWithoutId);
-		message.success(`추가를 완료하였습니다.`);
+		return true;
 	} catch (error) {
 		console.error('Error adding document:', error);
-		message.error(`추가를 실패하였습니다.`);
+		return false;
 	}
 };
 
@@ -335,10 +343,12 @@ export const fetchFileData = async (
 	const files: UploadFile<any>[] = await Promise.all(
 		paths.map(async (path) => {
 			try {
-				const url = await getDownloadURL(ref(storage, path));
+				const url = path
+					? await getDownloadURL(ref(storage, path))
+					: undefined;
 				return {
 					uid: path, // 고유 ID (파일 경로 사용)
-					name: path.split('/').pop() || 'image.jpg', // 파일 이름
+					name: path?.split('/').pop() || 'image.jpg', // 파일 이름
 					status: 'done' as UploadFileStatus, // 업로드 완료 상태
 					url, // Firebase Storage에서 가져온 다운로드 URL
 				};
@@ -358,9 +368,21 @@ export const deleteData = async (collectionName: string, id: string) => {
 		await deleteDoc(docRef); // 문서 삭제
 
 		console.log(`Document with ID ${id} deleted successfully!`);
-		message.success('삭제를 완료하였습니다.');
+		return true;
 	} catch (error) {
 		console.error('Error deleting document:', error);
-		message.error('삭제를 실패하였습니다.');
+		return false;
+	}
+};
+
+export const deleteFile = async (filePath: string) => {
+	const fileRef = ref(storage, filePath);
+
+	try {
+		await deleteObject(fileRef);
+		console.log(`Successfully deleted ${filePath}`);
+	} catch (error) {
+		console.error('Error deleting file:', error);
+		throw error;
 	}
 };
