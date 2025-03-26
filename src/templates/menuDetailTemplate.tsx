@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import {
 	collNameMenuCategories,
 	collNameMenus,
-	MenuCategory,
+	CategoryData,
 	MenuData,
 } from './MenusTemplate';
 import { useDocIdStore } from 'stores/docIdStore';
@@ -29,15 +29,12 @@ import { pathNames } from 'const/pathNames';
 export function MenuDetailTemplate() {
 	const [data, setData] = useState<MenuData>();
 	const [menuCategoryOptions, setMenuCategoryOptions] = useState<Option[]>();
-	const [menuNames, setMenuNames] = useState<string[]>([]);
 	const [nameInput, setNameInput] = useState<string>('');
 	const [priceInput, setPriceInput] = useState<number | string>(0);
 	const [descInput, setDescInput] = useState<string>('');
 	const [fileList, setFileList] = useState<UploadFile[]>([]);
 	const [previewVisible, setPreviewVisible] = useState(false); // 미리보기 모달 표시 여부
 	const [previewImage, setPreviewImage] = useState<string>(''); // 미리보기 이미지 URL
-
-	const [messageApi, contextHolder] = message.useMessage();
 
 	const docId = useDocIdStore((state) => state.id);
 	const setDocId = useDocIdStore((state) => state.setId);
@@ -83,7 +80,7 @@ export function MenuDetailTemplate() {
 	};
 
 	const createSetInitMenuData = (menuCategoryOptions: Option[]) => {
-		const initMenuData = {
+		const initMenuData: MenuData = {
 			id: uuidv4(),
 			name: '',
 			categoryId: menuCategoryOptions[0].value as string,
@@ -99,7 +96,7 @@ export function MenuDetailTemplate() {
 	const getSetMenuCategoryOptions = async () => {
 		const menuCategories = (await fetchCollectionData(
 			collNameMenuCategories
-		)) as MenuCategory[] | undefined;
+		)) as CategoryData[] | undefined;
 
 		if (menuCategories) {
 			const transformedData = menuCategories.map((category) => ({
@@ -156,7 +153,7 @@ export function MenuDetailTemplate() {
 				let idx = 1;
 				for (const file of fileList) {
 					if (!uploadingData.imagePaths.includes(file.name)) {
-						const path = `${uploadingData.name}_${idx++}`;
+						const path = `menus/${uploadingData.name}_${idx++}`;
 						await uploadFileData(file, path);
 						uploadingData.imagePaths.push(path);
 					}
@@ -168,29 +165,21 @@ export function MenuDetailTemplate() {
 				} else {
 					message.error(`${messageObj} 실패하였습니다.`);
 				}
+				navigate(pathNames.menusManagement);
 			} else {
 				message.error('모든 항목을 채워주세요.');
 				return;
 			}
 		}
-		navigate(pathNames.menusManagement);
 	};
 
 	const onClickEdit = async () => {
 		if (data) {
 			//기존 데이터 삭제
-			// await deleteMenuData(data);
 			await deleteData(collNameMenus, data.id);
 			await onClickAdd('수정을');
 		}
 	};
-
-	// const deleteMenuData = async (data: MenuData) => {
-	// 	await deleteData(collNameMenus, data.id);
-	// 	for (const path of data.imagePaths) {
-	// 		await deleteFile(path);
-	// 	}
-	// };
 
 	const checkAllValuesFilled = (
 		data: MenuData,
@@ -226,109 +215,106 @@ export function MenuDetailTemplate() {
 	};
 
 	return (
-		<>
-			{contextHolder}
-			<CommonTemplate label={docId ? '메뉴정보' : '메뉴추가'}>
-				<div className='flex flex-col gap-[18px]'>
-					<div className='flex flex-col gap-[18px] border-b border-stone-100 pb-[24px]'>
-						<LabelDropdown
-							label={'종류'}
-							options={menuCategoryOptions}
-							value={
-								menuCategoryOptions?.find(
-									(opt) => opt.value === data?.categoryId
-								)?.value
-							}
-							onChange={(value) =>
-								setData((prev) => {
-									if (prev) {
-										prev.categoryId = value;
-										return { ...prev };
-									}
-								})
-							}
-						/>
-						<LabelTextField
-							label={'메뉴명'}
-							value={nameInput}
-							onChange={(e) => setNameInput(e.target.value)}
-							onBlur={(e) =>
-								setData((prev) => {
-									if (prev) {
-										prev.name = e.target.value;
-										return { ...prev };
-									}
-								})
-							}
-						/>
-						<LabelTextField
-							label={'금액'}
-							value={priceInput}
-							onChange={(e) => setPriceInput(e.target.value)}
-							onBlur={onBlurPrice}
-							inputLabel='원'
-						/>
-						<LabelTextField
-							label={'메뉴 설명'}
-							value={descInput}
-							onChange={(e) => {
-								setDescInput(e.target.value);
-							}}
-							onBlur={(e) =>
-								setData((prev) => {
-									if (prev) {
-										prev.description = e.target.value;
-										return { ...prev };
-									}
-								})
-							}
-							inputStyle={{ width: 400, height: 150 }}
-						/>
-						<div className='flex items-center gap-[12px]'>
-							<div className='text-xs text-gray w-[90px]'>
-								메뉴 이미지
-							</div>
-							<Upload
-								listType='picture-card'
-								fileList={fileList}
-								onChange={(info) => setFileList(info.fileList)}
-								customRequest={({ file, onSuccess }) => {
-									onSuccess?.({}, file); // 업로드 성공을 시뮬레이트
-								}}
-								onPreview={handlePreview} // 미리보기 핸들러 설정
-								accept='image/*'>
-								<UploadButton />
-							</Upload>
+		<CommonTemplate label={docId ? '메뉴정보' : '메뉴추가'}>
+			<div className='flex flex-col gap-[18px]'>
+				<div className='flex flex-col gap-[18px] border-b border-stone-100 pb-[24px]'>
+					<LabelDropdown
+						label={'종류'}
+						options={menuCategoryOptions}
+						value={
+							menuCategoryOptions?.find(
+								(opt) => opt.value === data?.categoryId
+							)?.value
+						}
+						onChange={(value) =>
+							setData((prev) => {
+								if (prev) {
+									prev.categoryId = value;
+									return { ...prev };
+								}
+							})
+						}
+					/>
+					<LabelTextField
+						label={'메뉴명'}
+						value={nameInput}
+						onChange={(e) => setNameInput(e.target.value)}
+						onBlur={(e) =>
+							setData((prev) => {
+								if (prev) {
+									prev.name = e.target.value;
+									return { ...prev };
+								}
+							})
+						}
+					/>
+					<LabelTextField
+						label={'금액'}
+						value={priceInput}
+						onChange={(e) => setPriceInput(e.target.value)}
+						onBlur={onBlurPrice}
+						inputLabel='원'
+					/>
+					<LabelTextField
+						label={'메뉴 설명'}
+						value={descInput}
+						onChange={(e) => {
+							setDescInput(e.target.value);
+						}}
+						onBlur={(e) =>
+							setData((prev) => {
+								if (prev) {
+									prev.description = e.target.value;
+									return { ...prev };
+								}
+							})
+						}
+						inputStyle={{ width: 400, height: 150 }}
+					/>
+					<div className='flex items-center gap-[12px]'>
+						<div className='text-xs text-gray w-[90px]'>
+							메뉴 이미지
 						</div>
-					</div>
-					<div className='flex items-center gap-[8px] self-end'>
-						<Button
-							onClick={() => {
-								docId ? onClickEdit() : onClickAdd('추가를');
+						<Upload
+							listType='picture-card'
+							fileList={fileList}
+							onChange={(info) => setFileList(info.fileList)}
+							customRequest={({ file, onSuccess }) => {
+								onSuccess?.({}, file); // 업로드 성공을 시뮬레이트
 							}}
-							variant={'solid'}
-							color='orange'
-							style={{ width: 'fit-content' }}>
-							{docId ? '수정' : '추가'}
-						</Button>
-						<Button
-							onClick={() => navigate(-1)}
-							style={{ width: 'fit-content' }}>
-							목록
-						</Button>
+							onPreview={handlePreview} // 미리보기 핸들러 설정
+							accept='image/*'>
+							<UploadButton />
+						</Upload>
 					</div>
-					<Modal
-						open={previewVisible}
-						footer={null}
-						onCancel={() => setPreviewVisible(false)}>
-						<img
-							alt='preview'
-							style={{ width: '100%' }}
-							src={previewImage}
-						/>
-					</Modal>
 				</div>
-			</CommonTemplate>
-		</>
+				<div className='flex items-center gap-[8px] self-end'>
+					<Button
+						onClick={() => {
+							docId ? onClickEdit() : onClickAdd('추가를');
+						}}
+						variant={'solid'}
+						color='orange'
+						style={{ width: 'fit-content' }}>
+						{docId ? '수정' : '추가'}
+					</Button>
+					<Button
+						onClick={() => navigate(-1)}
+						style={{ width: 'fit-content' }}>
+						목록
+					</Button>
+				</div>
+				<Modal
+					open={previewVisible}
+					footer={null}
+					onCancel={() => setPreviewVisible(false)}>
+					<img
+						alt='preview'
+						style={{ width: '100%' }}
+						src={previewImage}
+					/>
+				</Modal>
+			</div>
+		</CommonTemplate>
 	);
 }

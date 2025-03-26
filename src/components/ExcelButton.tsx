@@ -54,6 +54,9 @@ export const ExcelButton = ({
 }) => {
 	const [loading, setLoading] = useState<boolean>(false);
 	const [messageApi, contextHolder] = message.useMessage();
+	const [orders, setOrders] = useState<OrderData[]>([]);
+	const [menus, setMenus] = useState<MenuData[]>([]);
+	const [orderers, setOrderers] = useState<UserData[]>([]);
 
 	const handleExport = async () => {
 		try {
@@ -76,43 +79,84 @@ export const ExcelButton = ({
 			for (const doc of querySnapshot.docs) {
 				const data = doc.data() as OrderItemData;
 
-				const orderData: OrderData = await fetchDataWithDocId(
-					collNameOrders,
-					data.orderId
+				let orderData: OrderData | undefined = orders.find(
+					(order) => order.id === data.orderId
 				);
 
-				const ordererData: UserData = await fetchDataWithDocId(
-					orderData.ordererType === ordererType.user
-						? collNameUsers
-						: collNameGuests,
-					orderData.ordererId
+				if (!orderData) {
+					orderData = await fetchDataWithDocId(
+						collNameOrders,
+						data.orderId
+					);
+					setOrders((prev) => {
+						if (orderData) {
+							prev.push(orderData);
+						}
+						return prev;
+					});
+				}
+
+				let ordererData: UserData | undefined = orderers.find(
+					(orderer) => orderer.id === orderData?.ordererId
 				);
 
-				const menuData: MenuData = await fetchDataWithDocId(
-					collNameMenus,
-					data.menuId
+				if (!ordererData && orderData) {
+					ordererData = await fetchDataWithDocId(
+						orderData.ordererType === ordererType.user
+							? collNameUsers
+							: collNameGuests,
+						orderData.ordererId
+					);
+					setOrderers((prev) => {
+						if (ordererData) {
+							prev.push(ordererData);
+						}
+						return prev;
+					});
+				}
+
+				let menuData: MenuData | undefined = menus.find(
+					(menu) => menu.id === data.menuId
 				);
 
-				const vat = (menuData.price / 100) * 10 * data.quantity;
+				if (!menuData) {
+					menuData = await fetchDataWithDocId(
+						collNameMenus,
+						data.menuId
+					);
+					setMenus((prev) => {
+						if (menuData) {
+							prev.push(menuData);
+						}
+						return prev;
+					});
+				}
 
-				orderExcelData.push({
-					no: count++,
-					orderTime: formatTimestampToTime(data.createdAt),
-					orderDate: formatTimestampToDate(data.createdAt),
-					ordererId: ordererData.id,
-					ordererName: ordererData.name,
-					address: orderData.address + ' ' + orderData.addressDetail,
-					recipient: ordererData.name,
-					contact: ordererData.phone,
-					email: ordererData.email || '',
-					deliveryDate: formatTimestampToDateTime(data.deliveryDate),
-					driver: '',
-					menuName: data.menuId,
-					quantity: data.quantity,
-					price: menuData.price,
-					vat: vat,
-					total: menuData.price * data.quantity + vat,
-				});
+				if (orderData && menuData && ordererData) {
+					const vat = (menuData.price / 100) * 10 * data.quantity;
+
+					orderExcelData.push({
+						no: count++,
+						orderTime: formatTimestampToTime(data.createdAt),
+						orderDate: formatTimestampToDate(data.createdAt),
+						ordererId: ordererData.id,
+						ordererName: ordererData.name,
+						address:
+							orderData.address + ' ' + orderData.addressDetail,
+						recipient: ordererData.name,
+						contact: ordererData.phone,
+						email: ordererData.email || '',
+						deliveryDate: formatTimestampToDateTime(
+							data.deliveryDate
+						),
+						driver: '',
+						menuName: data.menuId,
+						quantity: data.quantity,
+						price: menuData.price,
+						vat: vat,
+						total: menuData.price * data.quantity + vat,
+					});
+				}
 			}
 
 			const worksheet = XLSX.utils.json_to_sheet(orderExcelData, {

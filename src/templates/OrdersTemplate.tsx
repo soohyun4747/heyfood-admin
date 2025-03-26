@@ -22,7 +22,7 @@ import {
 	categoryAllValue,
 	collNameMenuCategories,
 	collNameMenus,
-	MenuCategory,
+	CategoryData,
 	MenuData,
 } from './MenusTemplate';
 import {
@@ -41,6 +41,7 @@ import { pathNames } from 'const/pathNames';
 import { db } from 'config/firebase';
 import { Dayjs } from 'dayjs';
 import ExcelButton from 'components/ExcelButton';
+import { dayjsToTimestamp } from 'utils/time';
 
 const searchFieldOrdererName = 'ordererName';
 const searchFieldMenuName = 'menuId';
@@ -105,7 +106,7 @@ export function OrdersTemplate() {
 		useState<string>(categoryAllValue);
 	const [loading, setLoading] = useState(true);
 	const [rowData, setRowData] = useState<OrderItemData[]>([]);
-	const [menuCategories, setMenuCategories] = useState<MenuCategory[]>();
+	const [menuCategories, setMenuCategories] = useState<CategoryData[]>();
 	const [menuList, setMenuList] = useState<MenuData[]>([]);
 	const [orderStart, setOrderStart] = useState<Dayjs>();
 	const [orderEnd, setOrderEnd] = useState<Dayjs>();
@@ -288,9 +289,7 @@ export function OrdersTemplate() {
 		);
 	};
 
-	const onChangeOrderStartDate = (date: Dayjs) => {
-        console.log(date);
-        
+	const onChangeOrderStartDate = (date: Dayjs) => {        
 		setOrderStart(date);
 		setStartDocInfo(undefined);
 		setCurrentPage(1);
@@ -637,12 +636,12 @@ const setQConstraintsByDeliveryDate = async (
 ) => {
 	if (orderStart) {
 		queryConstraints.push(
-			where('createdAt', '>=', Timestamp.fromDate(orderStart.toDate()))
+			where('createdAt', '>=', dayjsToTimestamp(orderStart))
 		);
 	}
 	if (orderEnd) {
 		queryConstraints.push(
-			where('createdAt', '<=', Timestamp.fromDate(orderEnd.toDate()))
+			where('createdAt', '<=', dayjsToTimestamp(orderEnd))
 		);
 	}
 	if (deliveryStart) {
@@ -650,7 +649,7 @@ const setQConstraintsByDeliveryDate = async (
 			where(
 				'deliveryDate',
 				'>=',
-				Timestamp.fromDate(deliveryStart.toDate())
+				dayjsToTimestamp(deliveryStart)
 			)
 		);
 	}
@@ -659,7 +658,7 @@ const setQConstraintsByDeliveryDate = async (
 			where(
 				'deliveryDate',
 				'<=',
-				Timestamp.fromDate(deliveryEnd.toDate())
+				dayjsToTimestamp(deliveryEnd)
 			)
 		);
 	}

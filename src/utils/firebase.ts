@@ -164,13 +164,14 @@ export const fetchTableData = async (
 				pageIdx: page - 1,
 				doc: querySnapshot.docs[startDocIdx],
 			});
-		}
+		}		
 
 		if (setRowData) {
 			setRowData(newData);
 		}
 		setLoading(false);
 		return newData;
+
 	} catch (error) {
 		console.error('Error fetching data:', error);
 		setLoading(false);
@@ -329,16 +330,16 @@ export const updateData = async (collectionName: string, data: any) => {
 		const { id, ...dataWithoutId } = data;
 
 		await updateDoc(docRef, dataWithoutId);
-		message.success(`수정이 완료되었습니다.`);
+		return true;
 	} catch (error) {
 		console.error('Error updating document: ', error);
-		message.error(`수정을 실패하였습니다.`);
+		return false;
 	}
 };
 
 export const fetchFileData = async (
 	paths: string[],
-	setFileList: Dispatch<SetStateAction<UploadFile<any>[]>>
+	setFileList?: Dispatch<SetStateAction<UploadFile<any>[]>>
 ) => {
 	const files: UploadFile<any>[] = await Promise.all(
 		paths.map(async (path) => {
@@ -359,7 +360,11 @@ export const fetchFileData = async (
 		})
 	);
 
-	setFileList(files);
+	if (setFileList) {
+		setFileList(files);
+	}
+
+	return files;
 };
 
 export const deleteData = async (collectionName: string, id: string) => {

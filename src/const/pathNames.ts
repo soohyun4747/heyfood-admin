@@ -8,8 +8,6 @@ export const pathNames = {
 	orderDetail: '/orders/detail',
 	popupsManagement: '/popups',
 	popupDetail: '/popups/detail',
-	bannersManagement: '/banners',
-	bannerDetail: '/banners/detail',
-	regionsManagement: '/regions',
-	regionDetail: '/regions/detail',
+	FAQsManagement: '/faqs',
+	FAQDetail: '/faqs/detail',
 };

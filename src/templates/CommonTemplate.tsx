@@ -8,7 +8,7 @@ const tabMenuUrls: { [key: string]: string } = {
 	메뉴관리: pathNames.menusManagement,
 	주문관리: pathNames.ordersManagement,
 	팝업관리: pathNames.popupsManagement,
-	배너관리: pathNames.bannersManagement,
+	FAQ관리: pathNames.FAQsManagement,
 };
 
 const getTabValue = (pathName: string) => {
@@ -23,8 +23,8 @@ const getTabValue = (pathName: string) => {
 			return '주문관리';
 		case pathNames.popupsManagement:
 			return '팝업관리';
-		case pathNames.bannersManagement:
-			return '배너관리';
+		case pathNames.FAQsManagement:
+			return 'FAQ관리';
 	}
 };
 

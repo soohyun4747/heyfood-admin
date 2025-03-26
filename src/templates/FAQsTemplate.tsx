@@ -1,16 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CommonTemplate } from './CommonTemplate';
 import {
-	fetchTableData,
-	fetchSearchData,
-	fetchTotalCount,
-	StartDocInfo,
-	fetchCollectionData,
-	deleteData,
-} from 'utils/firebase';
-import { PAGE_SIZE } from 'const/table';
-import { Timestamp } from 'firebase/firestore';
-import {
 	Button,
 	Input,
 	message,
@@ -21,47 +11,49 @@ import {
 	Select,
 	Table,
 } from 'antd';
+import { Timestamp } from 'firebase/firestore';
+import {
+	deleteData,
+	fetchCollectionData,
+	fetchSearchData,
+	fetchTableData,
+	fetchTotalCount,
+	StartDocInfo,
+} from 'utils/firebase';
+import { pathNames } from 'const/pathNames';
 import { useNavigate } from 'react-router-dom';
 import { useDocIdStore } from 'stores/docIdStore';
+import { PAGE_SIZE } from 'const/table';
+import { categoryAllValue, CategoryData } from './MenusTemplate';
 import { ColumnsType } from 'antd/es/table';
-import { pathNames } from 'const/pathNames';
 
-export interface CategoryData {
-	id: string;
-	name: string;
-}
+const searchFieldOptions = [{ value: 'title', label: '제목' }];
 
-export interface MenuData {
+export interface FAQData {
 	[key: string]: any;
 	id: string;
-	name: string;
+	title: string;
+	content: string;
 	categoryId: string;
-	description: string;
-	price: number;
-	imagePaths: string[];
+	createdAt: Timestamp;
 }
 
-const searchFieldOptions = [{ value: 'name', label: '메뉴명' }];
+export const collNameFAQs = 'FAQs';
+export const collNameFAQCategories = 'FAQCategories';
 
-export const collNameMenus = 'menus';
-export const collNameMenuCategories = 'menuCategories';
-
-export const categoryAllValue = 'all';
-
-export function MenusTemplate() {
+export function FAQsTemplate() {
 	const [total, setTotal] = useState(0);
+	const [searchValue, setSearchValue] = useState<string>();
 	const [startDocInfo, setStartDocInfo] = useState<StartDocInfo>();
 	const [currentPage, setCurrentPage] = useState(1);
 	const [loading, setLoading] = useState(true);
-	const [rowData, setRowData] = useState<MenuData[]>([]);
-	const [searchValue, setSearchValue] = useState<string>();
-	const [menuCategories, setMenuCategories] = useState<CategoryData[]>();
-	const [selectedMenuCategory, setSelectedMenuCategory] =
+	const [rowData, setRowData] = useState<FAQData[]>([]);
+	const [deleteItem, setDeleteItem] = useState<FAQData>();
+	const [selectedFAQCategory, setSelectedFAQCategory] =
 		useState<string>(categoryAllValue);
-	const [deleteMenu, setDeleteMenu] = useState<MenuData>();
+	const [FAQCategories, setFAQCategories] = useState<CategoryData[]>();
 
 	const { Search } = Input;
-
 	const navigte = useNavigate();
 	const setDocId = useDocIdStore((state) => state.setId);
 
@@ -70,12 +62,12 @@ export function MenusTemplate() {
 	}, []);
 
 	const initFetchData = async () => {
-		const totalCnt = await fetchTotalCount(collNameMenus);
+		const totalCnt = await fetchTotalCount(collNameFAQs);
 
 		if (totalCnt) {
 			setTotal(totalCnt);
-			fetchTableData(
-				collNameMenus,
+			await fetchTableData(
+				collNameFAQs,
 				startDocInfo,
 				PAGE_SIZE,
 				currentPage,
@@ -86,22 +78,24 @@ export function MenusTemplate() {
 			);
 		}
 
-		fetchCollectionData(collNameMenuCategories, setMenuCategories);
+		fetchCollectionData(collNameFAQCategories, setFAQCategories);
 	};
 
-	const onChangeSearchValue = (e: React.ChangeEvent<HTMLInputElement>) => {
+	const onChangeSearchValue = async (
+		e: React.ChangeEvent<HTMLInputElement>
+	) => {
 		setSearchValue(e.target.value);
 		setStartDocInfo(undefined);
 		setCurrentPage(1);
 
-		fetchSearchData(
-			collNameMenus,
+		await fetchSearchData(
+			collNameFAQs,
 			undefined,
 			PAGE_SIZE,
 			1,
-			selectedMenuCategory === categoryAllValue
+			selectedFAQCategory === categoryAllValue
 				? undefined
-				: { value: selectedMenuCategory, field: 'categoryId' },
+				: { value: selectedFAQCategory, field: 'categoryId' },
 			{
 				value: e.target.value,
 				field: searchFieldOptions[0].value,
@@ -114,12 +108,12 @@ export function MenusTemplate() {
 	};
 
 	const onSelectMenuCategory = (e: RadioChangeEvent) => {
-		setSelectedMenuCategory(e.target.value);
+		setSelectedFAQCategory(e.target.value);
 		setStartDocInfo(undefined);
 		setCurrentPage(1);
 
 		fetchSearchData(
-			collNameMenus,
+			collNameFAQs,
 			undefined,
 			PAGE_SIZE,
 			1,
@@ -141,13 +135,13 @@ export function MenusTemplate() {
 		setCurrentPage(page);
 
 		fetchSearchData(
-			collNameMenus,
+			collNameFAQs,
 			startDocInfo,
 			PAGE_SIZE,
 			page,
-			selectedMenuCategory === categoryAllValue
+			selectedFAQCategory === categoryAllValue
 				? undefined
-				: { value: selectedMenuCategory, field: 'categoryId' },
+				: { value: selectedFAQCategory, field: 'categoryId' },
 			{
 				value: searchValue,
 				field: searchFieldOptions[0].value,
@@ -160,9 +154,9 @@ export function MenusTemplate() {
 	};
 
 	const onDelete = async () => {
-		if (deleteMenu) {
-			setDeleteMenu(undefined);
-			const isSuccess = await deleteData(collNameMenus, deleteMenu.id);
+		if (deleteItem) {
+			setDeleteItem(undefined);
+			const isSuccess = await deleteData(collNameFAQs, deleteItem.id);
 			if (isSuccess) {
 				message.success('삭제를 완료하였습니다.');
 				await initFetchData();
@@ -172,27 +166,22 @@ export function MenusTemplate() {
 		}
 	};
 
-	const columns: ColumnsType<MenuData> = [
+	const columns: ColumnsType<FAQData> = [
 		{
 			title: '종류',
 			dataIndex: 'categoryId',
 			width: 100,
 			render: (value) => {
-				const menuCategory = menuCategories?.find(
+				const FAQCategory = FAQCategories?.find(
 					(category) => category.id === value
 				);
 
-				return menuCategory?.name;
+				return FAQCategory?.name;
 			},
 		},
 		{
-			title: '메뉴명',
-			dataIndex: 'name',
-		},
-		{
-			title: '금액',
-			dataIndex: 'price',
-			render: (value) => `${value.toLocaleString('en-US')}원`,
+			title: '제목',
+			dataIndex: 'title',
 		},
 		{
 			title: '등록일/수정일',
@@ -211,7 +200,7 @@ export function MenusTemplate() {
 					className='text-blue-600 hover:cursor-pointer'
 					onClick={() => {
 						setDocId(record.id);
-						navigte(pathNames.menuDetail);
+						navigte(pathNames.FAQDetail);
 					}}>
 					보기/수정
 				</div>
@@ -224,7 +213,7 @@ export function MenusTemplate() {
 			render: (value, record) => (
 				<div
 					className='text-red-500 hover:cursor-pointer'
-					onClick={() => setDeleteMenu(record)}>
+					onClick={() => setDeleteItem(record)}>
 					삭제
 				</div>
 			),
@@ -233,7 +222,7 @@ export function MenusTemplate() {
 
 	return (
 		<CommonTemplate
-			label={'메뉴관리'}
+			label={'FAQ관리'}
 			allCnt={total}>
 			<div className='flex flex-col gap-[12px]'>
 				<div className='flex items-center justify-between'>
@@ -252,17 +241,17 @@ export function MenusTemplate() {
 						/>
 					</div>
 					<Button
-						onClick={() => navigte(pathNames.menuDetail)}
+						onClick={() => navigte(pathNames.FAQDetail)}
 						variant='outlined'
 						color='orange'>
-						메뉴추가
+						FAQ추가
 					</Button>
 				</div>
 				<Radio.Group
-					value={selectedMenuCategory}
+					value={selectedFAQCategory}
 					onChange={onSelectMenuCategory}>
 					<Radio.Button value={categoryAllValue}>전체</Radio.Button>
-					{menuCategories?.map((category) => (
+					{FAQCategories?.map((category) => (
 						<Radio.Button
 							key={category.id}
 							value={category.id}>
@@ -270,7 +259,7 @@ export function MenusTemplate() {
 						</Radio.Button>
 					))}
 				</Radio.Group>
-				<Table<MenuData>
+				<Table<FAQData>
 					size={'small'}
 					className={'hey-table'}
 					columns={columns}
@@ -291,17 +280,17 @@ export function MenusTemplate() {
 				</div>
 				<Modal
 					centered
-					open={deleteMenu ? true : false}
-					title='메뉴 삭제'
+					open={deleteItem ? true : false}
+					title='팝업 삭제'
 					width={400}
 					onOk={onDelete}
 					okButtonProps={{
 						style: { background: 'red' },
 					}}
 					okText={'삭제'}
-					onCancel={() => setDeleteMenu(undefined)}
+					onCancel={() => setDeleteItem(undefined)}
 					cancelText={'취소'}>
-					<p>"{deleteMenu?.name}" 메뉴를 삭제하시겠습니까?</p>
+					<p>"{deleteItem?.title}" 팝업을 삭제하시겠습니까?</p>
 				</Modal>
 			</div>
 		</CommonTemplate>

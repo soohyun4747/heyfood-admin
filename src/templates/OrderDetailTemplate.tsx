@@ -72,11 +72,19 @@ export function OrderDetailTemplate() {
 					/>
 					<LabelValue
 						label={'주문날짜'}
-						value={formatTimestampToDate(orderData?.createdAt)}
+						value={
+							orderData
+								? formatTimestampToDate(orderData.createdAt)
+								: undefined
+						}
 					/>
 					<LabelValue
 						label={'주문시간'}
-						value={formatTimestampToTime(orderData?.createdAt)}
+						value={
+							orderData
+								? formatTimestampToTime(orderData?.createdAt)
+								: undefined
+						}
 					/>
 					<LabelValue
 						label={'이메일'}
@@ -136,15 +144,23 @@ export function OrderDetailTemplate() {
 					/>
 					<LabelValue
 						label={'배달날짜'}
-						value={formatTimestampToDate(
-							orderItemData?.deliveryDate
-						)}
+						value={
+							orderItemData
+								? formatTimestampToDate(
+										orderItemData?.deliveryDate
+								  )
+								: undefined
+						}
 					/>
 					<LabelValue
 						label={'배달시간'}
-						value={formatTimestampToTime(
-							orderItemData?.deliveryDate
-						)}
+						value={
+							orderItemData
+								? formatTimestampToTime(
+										orderItemData?.deliveryDate
+								  )
+								: undefined
+						}
 					/>
 					<LabelValue
 						label={'요구사항'}

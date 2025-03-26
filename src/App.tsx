@@ -12,6 +12,10 @@ import { MenuDetailTemplate } from 'templates/MenuDetailTemplate';
 import { OrdersTemplate } from 'templates/OrdersTemplate';
 import { generateRandomOrderData } from 'test/order';
 import { OrderDetailTemplate } from 'templates/OrderDetailTemplate';
+import { PopupsTemplate } from 'templates/PopupsTemplate';
+import { PopupDetailTemplate } from 'templates/PopupDetailTemplate';
+import { FAQsTemplate } from 'templates/FAQsTemplate';
+import { FAQDetailTemplate } from 'templates/FAQDetailTemplate';
 
 function App() {
 	const navigate = useNavigate();
@@ -75,6 +79,22 @@ function App() {
 			<Route
 				path={pathNames.orderDetail}
 				element={<OrderDetailTemplate />}
+			/>
+			<Route
+				path={pathNames.popupsManagement}
+				element={<PopupsTemplate />}
+			/>
+			<Route
+				path={pathNames.popupDetail}
+				element={<PopupDetailTemplate />}
+			/>
+			<Route
+				path={pathNames.FAQsManagement}
+				element={<FAQsTemplate />}
+			/>
+			<Route
+				path={pathNames.FAQDetail}
+				element={<FAQDetailTemplate />}
 			/>
 		</Routes>
 	);
