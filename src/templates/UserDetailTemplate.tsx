@@ -2,14 +2,14 @@ import { LabelTextField } from 'components/LabelTexfield';
 import { CommonTemplate } from './CommonTemplate';
 import { ChangeEvent, useEffect, useState } from 'react';
 import { useDocIdStore } from 'stores/docIdStore';
-import { collNameUsers, UserData } from './UsersTemplate';
+import { collNameUsers, IUser } from './UsersTemplate';
 import { Button } from 'antd';
 import { LabelValue } from 'components/LabelValue';
 import { useNavigate } from 'react-router-dom';
 import { fetchDataWithDocId } from 'utils/firebase';
 
 export function UserDetailTemplate() {
-	const [data, setData] = useState<UserData>();
+	const [data, setData] = useState<IUser>();
 
 	const docId = useDocIdStore((state) => state.id);
 	const navigate = useNavigate();

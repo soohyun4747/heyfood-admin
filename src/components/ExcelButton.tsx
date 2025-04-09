@@ -16,7 +16,7 @@ import {
 	OrderItemData,
 } from 'templates/OrdersTemplate';
 import { db } from 'config/firebase';
-import { collNameUsers, UserData } from 'templates/UsersTemplate';
+import { collNameUsers, IUser } from 'templates/UsersTemplate';
 import { collNameMenus, MenuData } from 'templates/MenusTemplate';
 import { Button, message } from 'antd';
 import { FileExcelFilled } from '@ant-design/icons';
@@ -56,7 +56,7 @@ export const ExcelButton = ({
 	const [messageApi, contextHolder] = message.useMessage();
 	const [orders, setOrders] = useState<OrderData[]>([]);
 	const [menus, setMenus] = useState<MenuData[]>([]);
-	const [orderers, setOrderers] = useState<UserData[]>([]);
+	const [orderers, setOrderers] = useState<IUser[]>([]);
 
 	const handleExport = async () => {
 		try {
@@ -96,7 +96,7 @@ export const ExcelButton = ({
 					});
 				}
 
-				let ordererData: UserData | undefined = orderers.find(
+				let ordererData: IUser | undefined = orderers.find(
 					(orderer) => orderer.id === orderData?.ordererId
 				);
 

@@ -16,7 +16,7 @@ import {
 	formatTimestampToDateTime,
 	formatTimestampToTime,
 } from 'utils/time';
-import { collNameUsers, UserData } from './UsersTemplate';
+import { collNameUsers, IUser } from './UsersTemplate';
 import { collNameMenus, MenuData } from './MenusTemplate';
 import { Button } from 'antd';
 import { fetchDataWithDocId } from 'utils/firebase';
@@ -24,7 +24,7 @@ import { fetchDataWithDocId } from 'utils/firebase';
 export function OrderDetailTemplate() {
 	const [orderData, setOrderData] = useState<OrderData>();
 	const [orderItemData, setOrderItemData] = useState<OrderItemData>();
-	const [ordererData, setOrdererData] = useState<UserData>();
+	const [ordererData, setOrdererData] = useState<IUser>();
 	const [menuData, setMenuData] = useState<MenuData>();
 
 	const docId = useDocIdStore((state) => state.id);
@@ -48,7 +48,7 @@ export function OrderDetailTemplate() {
 				collNameOrders,
 				orderItem.orderId
 			);
-			const orderer: UserData = await fetchDataWithDocId(
+			const orderer: IUser = await fetchDataWithDocId(
 				order.ordererType === ordererType.guest
 					? collNameGuests
 					: collNameUsers,

@@ -5,7 +5,7 @@ import {
 	Timestamp,
 } from 'firebase/firestore';
 import { fakerKO as faker } from '@faker-js/faker';
-import { UserData } from 'templates/UsersTemplate';
+import { IUser } from 'templates/UsersTemplate';
 import { OrderData, OrderItemData } from 'templates/OrdersTemplate';
 import { db } from 'config/firebase';
 
@@ -57,13 +57,13 @@ export const generateRandomOrderData = async (
 	const ordersRef = collection(db, 'orders');
 	const orderItemsRef = collection(db, 'orderItems');
 
-	const users: UserData[] = [];
+	const users: IUser[] = [];
 	const helpers = faker.helpers as any;
 
 	console.log('🔹 [Step 1] Adding Users...');
 	await Promise.all(
 		Array.from({ length: userCount }).map(async (_, i) => {
-			const user: Omit<UserData, 'id'> = {
+			const user: Omit<IUser, 'id'> = {
 				name: faker.person.fullName(),
 				email: faker.internet.email(),
 				phone: `010-${faker.number.int({
@@ -87,7 +87,7 @@ export const generateRandomOrderData = async (
 	const orderIds: string[] = [];
 
 	console.log('\n🔹 [Step 2] Adding Orders...');
-	const orderers: UserData[] = [];
+	const orderers: IUser[] = [];
 
 	await Promise.all(
 		Array.from({ length: orderCount }).map(async (_, i) => {

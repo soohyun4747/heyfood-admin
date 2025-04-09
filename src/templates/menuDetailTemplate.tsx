@@ -138,6 +138,7 @@ export function MenuDetailTemplate() {
 	const onClickAdd = async (messageObj: string) => {
 		if (data) {
 			const uploadingData = { ...data };
+			uploadingData.imagePaths = [];
 
 			//겹치는 이름이 없는지 확인
 			if (!(await isNameUnique(uploadingData))) {
@@ -149,6 +150,8 @@ export function MenuDetailTemplate() {
 				//주문내역에서 검색에 용이하게 하기 위해 id랑 name을 통일
 				uploadingData.id = uploadingData.name;
 
+				console.log({ fileList });
+
 				//사진 파일 저장
 				let idx = 1;
 				for (const file of fileList) {
@@ -158,6 +161,8 @@ export function MenuDetailTemplate() {
 						uploadingData.imagePaths.push(path);
 					}
 				}
+
+				console.log({ uploadingData });
 
 				//데이터 저장
 				if (await addData(collNameMenus, uploadingData)) {

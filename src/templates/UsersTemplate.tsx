@@ -14,7 +14,7 @@ import {
 import { Timestamp } from 'firebase/firestore';
 import { PAGE_SIZE } from 'const/table';
 
-export interface UserData {
+export interface IUser {
 	id: string;
 	name: string;
 	email?: string;
@@ -35,7 +35,7 @@ const searchFieldOptions = [
 export const collNameUsers = 'users';
 
 export function UsersTemplate() {
-	const [rowData, setRowData] = useState<UserData[]>([]);
+	const [rowData, setRowData] = useState<IUser[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [startDocInfo, setStartDocInfo] = useState<StartDocInfo>();
 	const [searchStartDocInfo, setSearchStartDocInfo] =
@@ -163,7 +163,7 @@ export function UsersTemplate() {
 		}
 	};
 
-	const columns: ColumnsType<UserData> = [
+	const columns: ColumnsType<IUser> = [
 		{
 			title: '이름',
 			dataIndex: 'name',
@@ -230,7 +230,7 @@ export function UsersTemplate() {
 						onChange={onChangeSearchValue}
 					/>
 				</div>
-				<Table<UserData>
+				<Table<IUser>
 					size={'small'}
 					className={'hey-table'}
 					columns={columns}

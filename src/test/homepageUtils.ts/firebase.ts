@@ -1,6 +1,6 @@
 import { db } from 'config/firebase';
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
-import { UserData } from 'templates/UsersTemplate';
+import { IUser } from 'templates/UsersTemplate';
 
 export const regions: { [key: string]: string } = {
 	bukgu: '/regions/bukgu',
@@ -39,7 +39,7 @@ const regionsKorean = {
 	연제구: 'yeonjaegu',
 };
 
-export const addUser = async (userData: Omit<UserData, 'id'>) => {
+export const addUser = async (userData: Omit<IUser, 'id'>) => {
 	try {
 		await addDoc(collection(db, 'users'), userData);
 	} catch (error) {
