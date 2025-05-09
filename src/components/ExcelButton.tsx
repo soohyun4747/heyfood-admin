@@ -17,7 +17,7 @@ import {
 } from 'templates/OrdersTemplate';
 import { db } from 'config/firebase';
 import { collNameUsers, IUser } from 'templates/UsersTemplate';
-import { collNameMenus, MenuData } from 'templates/MenusTemplate';
+import { collNameMenus, MenuData } from '../templates/MenusTemplate';
 import { Button, message } from 'antd';
 import { FileExcelFilled } from '@ant-design/icons';
 import { fetchDataWithDocId } from 'utils/firebase';
