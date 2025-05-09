@@ -25,6 +25,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Timestamp } from 'firebase/firestore';
 import { UploadButton } from 'components/UploadButton';
 import { pathNames } from 'const/pathNames';
+import { LabelTextArea } from 'components/LabelTextArea';
 
 export function MenuDetailTemplate() {
 	const [data, setData] = useState<MenuData>();
@@ -150,8 +151,6 @@ export function MenuDetailTemplate() {
 				//주문내역에서 검색에 용이하게 하기 위해 id랑 name을 통일
 				uploadingData.id = uploadingData.name;
 
-				console.log({ fileList });
-
 				//사진 파일 저장
 				let idx = 1;
 				for (const file of fileList) {
@@ -161,8 +160,6 @@ export function MenuDetailTemplate() {
 						uploadingData.imagePaths.push(path);
 					}
 				}
-
-				console.log({ uploadingData });
 
 				//데이터 저장
 				if (await addData(collNameMenus, uploadingData)) {
@@ -260,7 +257,7 @@ export function MenuDetailTemplate() {
 						onBlur={onBlurPrice}
 						inputLabel='원'
 					/>
-					<LabelTextField
+					<LabelTextArea
 						label={'메뉴 설명'}
 						value={descInput}
 						onChange={(e) => {
