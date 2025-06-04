@@ -12,7 +12,7 @@ export const addUsers100 = async () => {
     createdAt: Timestamp.now(), // Firestore Timestamp
   }));
 
-  await Promise.all(users.map(user => addUser(user)));
+  // await Promise.all(users.map(user => addUser(user)));
 
   console.log("✅ 100명의 사용자 추가 완료!");
 };

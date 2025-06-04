@@ -11,24 +11,37 @@ import {
 	ordererType,
 	OrderItemData,
 } from './OrdersTemplate';
-import {
-	formatTimestampToDate,
-	formatTimestampToDateTime,
-	formatTimestampToTime,
-} from 'utils/time';
+import { formatTimestampToDate, formatTimestampToTime } from 'utils/time';
 import { collNameUsers, IUser } from './UsersTemplate';
 import { collNameMenus, MenuData } from './MenusTemplate';
 import { Button } from 'antd';
-import { fetchDataWithDocId } from 'utils/firebase';
+import { fetchDataWithDocId, fetchImageUrl } from 'utils/firebase';
 
 export function OrderDetailTemplate() {
 	const [orderData, setOrderData] = useState<OrderData>();
 	const [orderItemData, setOrderItemData] = useState<OrderItemData>();
 	const [ordererData, setOrdererData] = useState<IUser>();
 	const [menuData, setMenuData] = useState<MenuData>();
+	const [downloadUrl, setDownloadUrl] = useState<string>('');
 
 	const docId = useDocIdStore((state) => state.id);
 	const navigate = useNavigate();
+
+	const imagePath = orderData?.stickerFile ? `stickers/${orderData?.id}` : undefined;
+	
+
+	useEffect(() => {
+		if (imagePath) {
+			getSetImageUrl(imagePath);
+		}
+	}, [imagePath]);
+
+	const getSetImageUrl = async (path: string) => {
+		const url = await fetchImageUrl(path);
+		if (url) {
+			setDownloadUrl(url);
+		}
+	};
 
 	useEffect(() => {
 		getSetInitData(docId);
@@ -61,8 +74,36 @@ export function OrderDetailTemplate() {
 		}
 	};
 
+	const handleDownload = async () => {
+		if (!downloadUrl || !imagePath) return;
+		try {
+			const res = await fetch(downloadUrl);
+			const blob = await res.blob();
+			const blobUrl = window.URL.createObjectURL(blob);
+			const link = document.createElement('a');
+			link.href = blobUrl;
+			// 파일명 추출
+			const filename = imagePath.split('/').pop() ?? 'download';
+			link.download = filename;
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			window.URL.revokeObjectURL(blobUrl);
+		} catch (e) {
+			console.error(e);
+			alert('다운로드 중 오류가 발생했습니다.');
+		}
+	};
 	return (
-		<CommonTemplate label={'회원정보'}>
+		<CommonTemplate
+			label={'회원정보'}
+			rightElement={
+				<Button
+					onClick={() => navigate(-1)}
+					style={{ width: 'fit-content', alignSelf: 'end' }}>
+					목록
+				</Button>
+			}>
 			<div className='flex flex-col gap-[18px]'>
 				<div className='flex flex-col gap-[18px] border-b border-stone-100 pb-[24px]'>
 					<div className='text-sm'>주문정보</div>
@@ -130,9 +171,11 @@ export function OrderDetailTemplate() {
 					<div className='text-sm'>배송정보</div>
 					<LabelValue
 						label={'주소'}
-						value={
-							orderData?.address + ' ' + orderData?.addressDetail
-						}
+						value={orderItemData?.address}
+					/>
+					<LabelValue
+						label={'상세주소'}
+						value={orderItemData?.addressDetail}
 					/>
 					<LabelValue
 						label={'이름'}
@@ -166,12 +209,33 @@ export function OrderDetailTemplate() {
 						label={'요구사항'}
 						value={orderData?.comment}
 					/>
+					<LabelValue
+						label={'스티커 문구'}
+						value={orderData?.stickerPhrase}
+					/>
+					<div className='flex items-center gap-[12px]'>
+						<div className='text-xs text-gray w-[90px]'>
+							스티커 사진
+						</div>
+						<div className='flex flex-col gap-[8px]'>
+							<div className='flex items-center justify-center h-[120px] min-w-[120px] border-2 border-dashed border-neutral-300 rounded-lg '>
+								{orderData?.stickerFile && (
+									<img
+										src={downloadUrl}
+										alt='Preview'
+										className='object-contain w-full h-full'
+									/>
+								)}
+							</div>
+							<Button
+								style={{ width: '100%' }}
+								onClick={handleDownload}
+								disabled={orderData?.stickerFile ? false : true}>
+								다운로드
+							</Button>
+						</div>
+					</div>
 				</div>
-				<Button
-					onClick={() => navigate(-1)}
-					style={{ width: 'fit-content', alignSelf: 'end' }}>
-					목록
-				</Button>
 			</div>
 		</CommonTemplate>
 	);

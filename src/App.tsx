@@ -10,7 +10,6 @@ import { UserDetailTemplate } from 'templates/UserDetailTemplate';
 import { MenusTemplate } from 'templates/MenusTemplate';
 import { MenuDetailTemplate } from 'templates/MenuDetailTemplate';
 import { OrdersTemplate } from 'templates/OrdersTemplate';
-import { generateRandomOrderData } from 'test/order';
 import { OrderDetailTemplate } from 'templates/OrderDetailTemplate';
 import { PopupsTemplate } from 'templates/PopupsTemplate';
 import { PopupDetailTemplate } from 'templates/PopupDetailTemplate';

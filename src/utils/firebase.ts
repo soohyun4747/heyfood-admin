@@ -164,14 +164,13 @@ export const fetchTableData = async (
 				pageIdx: page - 1,
 				doc: querySnapshot.docs[startDocIdx],
 			});
-		}		
+		}
 
 		if (setRowData) {
 			setRowData(newData);
 		}
 		setLoading(false);
 		return newData;
-
 	} catch (error) {
 		console.error('Error fetching data:', error);
 		setLoading(false);
@@ -389,5 +388,16 @@ export const deleteFile = async (filePath: string) => {
 	} catch (error) {
 		console.error('Error deleting file:', error);
 		throw error;
+	}
+};
+
+export const fetchImageUrl = async (path: string) => {
+	try {
+		const imageRef = ref(storage, path);
+		const url = await getDownloadURL(imageRef);
+		return url;
+	} catch (error) {
+		console.error('URL fetch error:', error);
+		alert('이미지 URL을 가져오는 데 실패했습니다.');
 	}
 };

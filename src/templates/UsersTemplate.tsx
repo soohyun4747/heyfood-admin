@@ -21,6 +21,7 @@ export interface IUser {
 	phone: string;
 	address: string;
 	addressDetail: string;
+	marketingAgree: boolean;
 	createdAt: Timestamp;
 	updatedAt?: Timestamp;
 }

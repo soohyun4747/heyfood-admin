@@ -70,13 +70,31 @@ export const paymentMethod = {
 
 export type PaymentMethod = (typeof paymentMethod)[keyof typeof paymentMethod];
 
+export const orderStatusLabels = {
+	paymentComplete: '결제완료',
+	confirmingPayment: '결제확인중',
+	paymentIncomplete: '결제미완료',
+	orderCanceled: '주문취소',
+};
+
+export const OrderStatus = {
+	paymentComplete: 'paymentComplete',
+	confirmingPayment: 'confirmingPayment',
+	paymentIncomplete: 'paymentIncomplete',
+	orderCanceled: 'orderCanceled',
+} as const;
+
+export type IOrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
+
 export interface OrderData {
 	id: string;
 	ordererId: string;
 	ordererType: OrdererType;
-	address: string;
-	addressDetail: string;
+	orderStatus: IOrderStatus;
 	comment?: string;
+	stickerFile: boolean;
+	stickerPhrase?: string;
+	companyName: string;
 	paymentMethodId: PaymentMethod;
 	createdAt: Timestamp;
 	updatedAt?: Timestamp;
@@ -90,6 +108,8 @@ export interface OrderItemData {
 	menuId: string;
 	quantity: number;
 	deliveryDate: Timestamp;
+	address: string;
+	addressDetail: string;
 	createdAt: Timestamp;
 	updatedAt?: Timestamp;
 }
@@ -179,13 +199,22 @@ export function OrdersTemplate() {
 	};
 
 	const getSetCurrentPageOrdersData = async () => {
-		const ordersData = await Promise.all(
-			rowData.map(async (row) => {
-				return await fetchDataWithDocId(collNameOrders, row.orderId);
-			})
+		// 1. 중복 제거
+		const uniqueOrderIds = Array.from(
+			new Set(rowData.map((row) => row.orderId))
 		);
 
-		setOrders(ordersData);
+		// 2. 병렬로 fetch
+		const orderPromises = uniqueOrderIds.map((orderId) =>
+			fetchDataWithDocId(collNameOrders, orderId)
+		);
+
+		try {
+			const ordersData: OrderData[] = await Promise.all(orderPromises);
+			setOrders(ordersData.filter((data) => data !== undefined));
+		} catch (error) {
+			console.error('Failed to fetch orders:', error);
+		}
 	};
 
 	const onChangeSearchField = (value: string) => {
@@ -289,7 +318,7 @@ export function OrdersTemplate() {
 		);
 	};
 
-	const onChangeOrderStartDate = (date: Dayjs) => {        
+	const onChangeOrderStartDate = (date: Dayjs) => {
 		setOrderStart(date);
 		setStartDocInfo(undefined);
 		setCurrentPage(1);
@@ -416,6 +445,9 @@ export function OrdersTemplate() {
 		);
 	};
 
+	console.log({rowData});
+	
+
 	const columns: ColumnsType<OrderItemData> = [
 		{
 			title: '주문일',
@@ -450,10 +482,19 @@ export function OrdersTemplate() {
 		},
 		{
 			title: '주소',
-			dataIndex: 'orderId',
+			dataIndex: 'address',
 			render: (value, record) => (
 				<div className={record.updatedAt && 'text-blue-500'}>
-					{orders.find((order) => order.id === value)?.address}
+					{value}
+				</div>
+			),
+		},
+		{
+			title: '상세주소',
+			dataIndex: 'addressDetail',
+			render: (value, record) => (
+				<div className={record.updatedAt && 'text-blue-500'}>
+					{value}
 				</div>
 			),
 		},
@@ -497,6 +538,51 @@ export function OrdersTemplate() {
 						</div>
 					);
 				}
+			},
+		},
+		{
+			title: '주문상태',
+			dataIndex: 'status',
+			render: (value: string, record) => {
+				const orderInfo = orders.find(
+					(order) => order.id === record.orderId
+				);
+
+				return (
+					<div className={record.updatedAt && 'text-blue-500'}>
+						{orderInfo && orderStatusLabels[orderInfo?.orderStatus]}
+					</div>
+				);
+			},
+		},
+		{
+			title: '스티커 파일',
+			dataIndex: 'stickerFile',
+			render: (value: string, record) => {
+				const orderInfo = orders.find(
+					(order) => order.id === record.orderId
+				);
+
+				return (
+					<div className={record.updatedAt && 'text-blue-500'}>
+						{orderInfo?.stickerFile ? 'o' : ''}
+					</div>
+				);
+			},
+		},
+		{
+			title: '스티커 문구',
+			dataIndex: 'stickerPhrase',
+			render: (value: string, record) => {
+				const orderInfo = orders.find(
+					(order) => order.id === record.orderId
+				);
+
+				return (
+					<div className={record.updatedAt && 'text-blue-500'}>
+						{orderInfo?.stickerPhrase}
+					</div>
+				);
 			},
 		},
 		{
@@ -646,20 +732,12 @@ const setQConstraintsByDeliveryDate = async (
 	}
 	if (deliveryStart) {
 		queryConstraints.push(
-			where(
-				'deliveryDate',
-				'>=',
-				dayjsToTimestamp(deliveryStart)
-			)
+			where('deliveryDate', '>=', dayjsToTimestamp(deliveryStart))
 		);
 	}
 	if (deliveryEnd) {
 		queryConstraints.push(
-			where(
-				'deliveryDate',
-				'<=',
-				dayjsToTimestamp(deliveryEnd)
-			)
+			where('deliveryDate', '<=', dayjsToTimestamp(deliveryEnd))
 		);
 	}
 
@@ -692,7 +770,6 @@ const filterDateGetSetRowData = async (
 	const queryConstraints: QueryConstraint[] = [];
 
 	const isCreatedAtOrder = orderStart || orderEnd ? true : false;
-    
 
 	if (orderStart || orderEnd || deliveryStart || deliveryEnd) {
 		setQConstraintsByDeliveryDate(
