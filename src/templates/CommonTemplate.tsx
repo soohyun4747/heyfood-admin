@@ -31,10 +31,12 @@ const getTabValue = (pathName: string) => {
 export function CommonTemplate({
 	children,
 	label,
+	rightElement,
 	allCnt,
 }: {
 	children: JSX.Element;
 	label: string;
+	rightElement?: JSX.Element;
 	allCnt?: number;
 }) {
 	const navigate = useNavigate();
@@ -70,17 +72,18 @@ export function CommonTemplate({
 				}}
 				value={getTabValue(location.pathname)}
 			/>
-			<div className='py-[10px]'>
-				<div className='flex items-center justify-between border-b border-stone-100 pb-[8px]'>
-					<div className='px-[18px] font-semibold text-gray-dark'>
+			<div className='py-[10px] h-[calc(100vh-72px)] overflow-y-auto'>
+				<div className='flex items-center justify-between border-b border-stone-100 pb-[8px] px-[18px]'>
+					<div className='font-semibold text-gray-dark'>
 						{label}
 					</div>
 					{allCnt !== undefined && (
-						<div className='px-[18px] flex items-center text-xs gap-[6px]'>
+						<div className='flex items-center text-xs gap-[6px]'>
 							<div className='text-gray'>전체목록</div>
 							<div>{allCnt}</div>
 						</div>
 					)}
+					{rightElement}
 				</div>
 				<div className='px-[18px] py-[16px]'>{children}</div>
 			</div>

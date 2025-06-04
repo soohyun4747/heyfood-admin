@@ -142,7 +142,7 @@ export const ExcelButton = ({
 						ordererId: ordererData.id,
 						ordererName: ordererData.name,
 						address:
-							orderData.address + ' ' + orderData.addressDetail,
+						data.address + ' ' + data.addressDetail,
 						recipient: ordererData.name,
 						contact: ordererData.phone,
 						email: ordererData.email || '',

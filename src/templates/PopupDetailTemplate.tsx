@@ -110,7 +110,7 @@ export function PopupDetailTemplate() {
 		if (data && checkAllValuesFilled(data, fileList)) {
 			const uploadingData = { ...data };
 			//사진 파일 저장
-			await uploadFileUpdateData(uploadingData);            
+			await uploadFileUpdateData(uploadingData);
 
 			//데이터 저장
 			if (await addData(collNamePopups, uploadingData)) {
@@ -145,6 +145,48 @@ export function PopupDetailTemplate() {
 		}
 
 		return isAllFilled;
+	};
+
+	const onChangeStartDate = (date: Dayjs) => {
+		if (date) {
+			setData((prev) => {
+				if (prev) {
+					if (date > timestampToDayjs(prev.endDate)) {
+						prev.endDate = getTimestampEndofDay(date.add(7, 'day'));
+					}
+					prev.startDate = getTimestampStartofDay(date);
+					return { ...prev };
+				}
+			});
+		} else {
+			setData((prev) => {
+				if (prev) {
+					return { ...prev };
+				}
+			});
+		}
+	};
+
+	const onChangeEndDate = (date: Dayjs) => {
+		if (date) {
+			setData((prev) => {
+				if (prev) {
+					if (date < timestampToDayjs(prev.startDate)) {
+						prev.startDate = getTimestampEndofDay(
+							date.subtract(7, 'day')
+						);
+					}
+					prev.endDate = getTimestampStartofDay(date);
+					return { ...prev };
+				}
+			});
+		} else {
+			setData((prev) => {
+				if (prev) {
+					return { ...prev };
+				}
+			});
+		}
 	};
 
 	return (
@@ -198,30 +240,14 @@ export function PopupDetailTemplate() {
 							value={
 								data ? timestampToDayjs(data.startDate) : null
 							}
-							onChange={(date: Dayjs) =>
-								setData((prev) => {
-									if (prev) {
-										prev.startDate =
-											getTimestampStartofDay(date);
-										return { ...prev };
-									}
-								})
-							}
+							onChange={onChangeStartDate}
 						/>
 					</div>
 					<div className='flex items-center gap-[12px]'>
 						<div className='text-xs text-gray w-[90px]'>종료일</div>
 						<DatePicker
 							value={data ? timestampToDayjs(data.endDate) : null}
-							onChange={(date: Dayjs) =>
-								setData((prev) => {
-									if (prev) {
-										prev.endDate =
-											getTimestampStartofDay(date);
-										return { ...prev };
-									}
-								})
-							}
+							onChange={onChangeEndDate}
 						/>
 					</div>
 				</div>
