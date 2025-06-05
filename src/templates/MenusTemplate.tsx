@@ -37,8 +37,10 @@ export interface MenuData {
 	name: string;
 	categoryId: string;
 	description: string;
+	ingredient: string;
 	price: number;
 	imagePaths: string[];
+	imageDetailPath: string;
 }
 
 const searchFieldOptions = [{ value: 'name', label: '메뉴명' }];

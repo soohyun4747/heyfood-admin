@@ -33,7 +33,9 @@ export function MenuDetailTemplate() {
 	const [nameInput, setNameInput] = useState<string>('');
 	const [priceInput, setPriceInput] = useState<number | string>(0);
 	const [descInput, setDescInput] = useState<string>('');
+	const [ingredInput, setIngredInput] = useState<string>('');
 	const [fileList, setFileList] = useState<UploadFile[]>([]);
+	const [detailFileList, setDetailFileList] = useState<UploadFile[]>([]);
 	const [previewVisible, setPreviewVisible] = useState(false); // 미리보기 모달 표시 여부
 	const [previewImage, setPreviewImage] = useState<string>(''); // 미리보기 이미지 URL
 
@@ -58,11 +60,15 @@ export function MenuDetailTemplate() {
 				docId,
 				setData
 			)) as MenuData | undefined;
+
+			console.log(menuData);
 			if (menuData) {
 				fetchFileData(menuData.imagePaths, setFileList);
+				fetchFileData([menuData.imageDetailPath], setDetailFileList);
 
 				setNameInput(menuData.name);
 				setPriceInput(menuData.price);
+				setIngredInput(menuData.ingredient);
 				setDescInput(menuData.description);
 			}
 		} else {
@@ -89,6 +95,8 @@ export function MenuDetailTemplate() {
 			price: 0,
 			imagePaths: [],
 			createdAt: Timestamp.now(),
+			ingredient: '',
+			imageDetailPath: '',
 		};
 
 		setData(initMenuData);
@@ -159,6 +167,16 @@ export function MenuDetailTemplate() {
 						await uploadFileData(file, path);
 						uploadingData.imagePaths.push(path);
 					}
+				}
+
+				//상세 사진 파일 저장
+				if (
+					detailFileList[0] &&
+					uploadingData.imageDetailPath !== detailFileList[0].name
+				) {
+					const path = `menus/${uploadingData.name}_detail`;
+					await uploadFileData(detailFileList[0], path);
+					uploadingData.imageDetailPath = path;
 				}
 
 				//데이터 저장
@@ -257,6 +275,21 @@ export function MenuDetailTemplate() {
 						onBlur={onBlurPrice}
 						inputLabel='원'
 					/>
+					<LabelTextField
+						label={'재료'}
+						value={ingredInput}
+						onChange={(e) => {
+							setIngredInput(e.target.value);
+						}}
+						onBlur={(e) =>
+							setData((prev) => {
+								if (prev) {
+									prev.ingredient = e.target.value;
+									return { ...prev };
+								}
+							})
+						}
+					/>
 					<LabelTextArea
 						label={'메뉴 설명'}
 						value={descInput}
@@ -284,6 +317,25 @@ export function MenuDetailTemplate() {
 							customRequest={({ file, onSuccess }) => {
 								onSuccess?.({}, file); // 업로드 성공을 시뮬레이트
 							}}
+							onPreview={handlePreview} // 미리보기 핸들러 설정
+							accept='image/*'>
+							<UploadButton />
+						</Upload>
+					</div>
+					<div className='flex items-center gap-[12px]'>
+						<div className='text-xs text-gray w-[90px]'>
+							상세 이미지
+						</div>
+						<Upload
+							listType='picture-card'
+							fileList={detailFileList}
+							onChange={(info) =>
+								setDetailFileList(info.fileList)
+							}
+							customRequest={({ file, onSuccess }) => {
+								onSuccess?.({}, file); // 업로드 성공을 시뮬레이트
+							}}
+							maxCount={1}
 							onPreview={handlePreview} // 미리보기 핸들러 설정
 							accept='image/*'>
 							<UploadButton />
