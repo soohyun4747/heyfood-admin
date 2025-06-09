@@ -10,6 +10,7 @@ import {
 	OrderData,
 	ordererType,
 	OrderItemData,
+	orderStatusLabels,
 } from './OrdersTemplate';
 import { formatTimestampToDate, formatTimestampToTime } from 'utils/time';
 import { collNameUsers, IUser } from './UsersTemplate';
@@ -27,8 +28,9 @@ export function OrderDetailTemplate() {
 	const docId = useDocIdStore((state) => state.id);
 	const navigate = useNavigate();
 
-	const imagePath = orderData?.stickerFile ? `stickers/${orderData?.id}` : undefined;
-	
+	const imagePath = orderData?.stickerFile
+		? `stickers/${orderData?.id}`
+		: undefined;
 
 	useEffect(() => {
 		if (imagePath) {
@@ -154,6 +156,13 @@ export function OrderDetailTemplate() {
 						}
 					/>
 					<LabelValue
+						label={'결제상태'}
+						value={
+							orderData &&
+							orderStatusLabels[orderData?.orderStatus]
+						}
+					/>
+					<LabelValue
 						label={'수정일'}
 						value={
 							orderItemData?.updatedAt
@@ -230,7 +239,9 @@ export function OrderDetailTemplate() {
 							<Button
 								style={{ width: '100%' }}
 								onClick={handleDownload}
-								disabled={orderData?.stickerFile ? false : true}>
+								disabled={
+									orderData?.stickerFile ? false : true
+								}>
 								다운로드
 							</Button>
 						</div>

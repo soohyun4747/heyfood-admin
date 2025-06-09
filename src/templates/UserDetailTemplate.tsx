@@ -56,6 +56,10 @@ export function UserDetailTemplate() {
 						}
 					/>
 					<LabelValue
+						label={'마케팅동의'}
+						value={data?.marketingAgree ? 'o' : 'x'}
+					/>
+					<LabelValue
 						label={'수정일'}
 						value={
 							data?.updatedAt

@@ -195,6 +195,11 @@ export function UsersTemplate() {
 				).toLocaleString(),
 		},
 		{
+			title: '마케팅동의',
+			dataIndex: 'marketingAgree',
+			render: (value: boolean) => (value ? 'o' : 'x'),
+		},
+		{
 			title: '',
 			fixed: 'right',
 			width: 40,

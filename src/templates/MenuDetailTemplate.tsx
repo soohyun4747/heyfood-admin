@@ -61,10 +61,14 @@ export function MenuDetailTemplate() {
 				setData
 			)) as MenuData | undefined;
 
-			console.log(menuData);
 			if (menuData) {
 				fetchFileData(menuData.imagePaths, setFileList);
-				fetchFileData([menuData.imageDetailPath], setDetailFileList);
+				if (menuData.imageDetailPath) {
+					fetchFileData(
+						[menuData.imageDetailPath],
+						setDetailFileList
+					);
+				}
 
 				setNameInput(menuData.name);
 				setPriceInput(menuData.price);

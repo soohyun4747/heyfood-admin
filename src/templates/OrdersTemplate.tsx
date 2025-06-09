@@ -71,17 +71,19 @@ export const paymentMethod = {
 export type PaymentMethod = (typeof paymentMethod)[keyof typeof paymentMethod];
 
 export const orderStatusLabels = {
-	paymentComplete: '결제완료',
-	confirmingPayment: '결제확인중',
-	paymentIncomplete: '결제미완료',
-	orderCanceled: '주문취소',
+	paid: '결제완료',
+	ready: '결제확인중',
+	failed: '결제실패',
+	cancelled: '주문취소',
+	expired: '결제기한만료',
 };
 
 export const OrderStatus = {
-	paymentComplete: 'paymentComplete',
-	confirmingPayment: 'confirmingPayment',
-	paymentIncomplete: 'paymentIncomplete',
-	orderCanceled: 'orderCanceled',
+	paid: 'paid',
+	ready: 'ready',
+	failed: 'failed',
+	cancelled: 'cancelled',
+	expired: 'expired',
 } as const;
 
 export type IOrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
@@ -445,9 +447,6 @@ export function OrdersTemplate() {
 		);
 	};
 
-	console.log({rowData});
-	
-
 	const columns: ColumnsType<OrderItemData> = [
 		{
 			title: '주문일',
@@ -541,7 +540,7 @@ export function OrdersTemplate() {
 			},
 		},
 		{
-			title: '주문상태',
+			title: '결제상태',
 			dataIndex: 'status',
 			render: (value: string, record) => {
 				const orderInfo = orders.find(
