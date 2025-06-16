@@ -173,7 +173,6 @@ export function MenuDetailTemplate() {
 					}
 				}
 
-				//상세 사진 파일 저장
 				if (
 					detailFileList[0] &&
 					uploadingData.imageDetailPath !== detailFileList[0].name
@@ -181,6 +180,8 @@ export function MenuDetailTemplate() {
 					const path = `menus/${uploadingData.name}_detail`;
 					await uploadFileData(detailFileList[0], path);
 					uploadingData.imageDetailPath = path;
+				} else {
+					uploadingData.imageDetailPath = '';
 				}
 
 				//데이터 저장
@@ -209,7 +210,9 @@ export function MenuDetailTemplate() {
 		data: MenuData,
 		fileList: UploadFile<any>[]
 	) => {
-		const keys = Object.keys(data);
+		const keys = Object.keys(data).filter(
+			(item) => item !== 'imageDetailPath'
+		); //imageDetailPath is optional
 		let isAllFilled = true;
 
 		for (let i = 0; i < keys.length; i++) {
