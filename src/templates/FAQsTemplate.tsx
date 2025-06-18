@@ -33,7 +33,8 @@ export interface FAQData {
 	[key: string]: any;
 	id: string;
 	title: string;
-	content: string;
+	// content: string;
+	imagePath: string;
 	categoryId: string;
 	createdAt: Timestamp;
 }

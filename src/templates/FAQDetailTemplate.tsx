@@ -7,21 +7,27 @@ import {
 	addData,
 	fetchCollectionData,
 	fetchDataWithDocId,
+	fetchFileData,
 	updateData,
+	uploadFileData,
 } from 'utils/firebase';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { Timestamp } from 'firebase/firestore';
 import { LabelTextField } from 'components/LabelTexfield';
-import { Button, message } from 'antd';
+import { Button, message, Upload, UploadFile } from 'antd';
 import { pathNames } from 'const/pathNames';
 import { LabelTextArea } from 'components/LabelTextArea';
+import { UploadButton } from 'components/UploadButton';
 
 export function FAQDetailTemplate() {
 	const [data, setData] = useState<FAQData>();
 	const [FAQCategoryOptions, setFAQCategoryOptions] = useState<Option[]>();
 	const [titleInput, setTitleInput] = useState<string>();
-	const [contentInput, setContentInput] = useState<string>();
+	// const [contentInput, setContentInput] = useState<string>();
+	const [fileList, setFileList] = useState<UploadFile[]>([]);
+	const [previewVisible, setPreviewVisible] = useState(false); // 미리보기 모달 표시 여부
+	const [previewImage, setPreviewImage] = useState<string>(''); // 미리보기 이미지 URL
 
 	const docId = useDocIdStore((state) => state.id);
 	const setDocId = useDocIdStore((state) => state.setId);
@@ -45,8 +51,8 @@ export function FAQDetailTemplate() {
 				setData
 			)) as FAQData | undefined;
 			if (FAQData) {
+				fetchFileData([FAQData.imagePath], setFileList);
 				setTitleInput(FAQData.title);
-				setContentInput(FAQData.content);
 			}
 		} else {
 			if (categoryOptions) {
@@ -60,7 +66,7 @@ export function FAQDetailTemplate() {
 			id: uuidv4(),
 			categoryId: categoryOptions[0].value as string,
 			title: '',
-			content: '',
+			imagePath: '',
 			createdAt: Timestamp.now(),
 		};
 
@@ -84,7 +90,7 @@ export function FAQDetailTemplate() {
 	};
 
 	const onClickEdit = async () => {
-		if (data && checkAllValuesFilled(data)) {
+		if (data && checkAllValuesFilled(data, fileList)) {
 			const isSuccess = await updateData(collNameFAQs, data);
 			if (isSuccess) {
 				message.success(`수정이 완료되었습니다.`);
@@ -98,23 +104,47 @@ export function FAQDetailTemplate() {
 	};
 
 	const onClickAdd = async () => {
-		//필수 항목이 채워져있는지 확인
-		if (data && checkAllValuesFilled(data)) {
-			//데이터 저장
-			if (await addData(collNameFAQs, data)) {
-				message.success(`추가를 완료하였습니다.`);
+		if (data) {
+			const uploadingData = { ...data };
+			//필수 항목이 채워져있는지 확인
+			if (checkAllValuesFilled(uploadingData, fileList)) {
+				//사진 파일 저장
+				if (
+					fileList[0] &&
+					uploadingData.imagePath !== fileList[0].name
+				) {
+					const path = `menus/${uploadingData.id}_detail`;
+					await uploadFileData(fileList[0], path);
+					uploadingData.imagePath = path;
+				} else {
+					uploadingData.imagePath = '';
+				}
+
+				//데이터 저장
+				if (await addData(collNameFAQs, uploadingData)) {
+					message.success(`추가를 완료하였습니다.`);
+				} else {
+					message.error(`추가를 실패하였습니다.`);
+				}
+				navigate(pathNames.FAQsManagement);
 			} else {
-				message.error(`추가를 실패하였습니다.`);
+				message.error('필수 항목을 채워주세요.');
+				return;
 			}
-			navigate(pathNames.FAQsManagement);
-		} else {
-			message.error('필수 항목을 채워주세요.');
-			return;
 		}
 	};
 
-	const checkAllValuesFilled = (data: FAQData) => {
-		const keys = Object.keys(data);
+	// 미리보기 클릭 핸들러
+	const handlePreview = (file: any) => {
+		setPreviewImage(file.url || URL.createObjectURL(file.originFileObj));
+		setPreviewVisible(true); // 모달 표시
+	};
+
+	const checkAllValuesFilled = (
+		data: FAQData,
+		fileList: UploadFile<any>[]
+	) => {
+		const keys = Object.keys(data).filter((item) => item !== 'imagePath');
 		let isAllFilled = true;
 
 		for (let i = 0; i < keys.length; i++) {
@@ -122,6 +152,10 @@ export function FAQDetailTemplate() {
 				isAllFilled = false;
 				break;
 			}
+		}
+
+		if (fileList.length < 1) {
+			isAllFilled = false;
 		}
 
 		return isAllFilled;
@@ -161,22 +195,21 @@ export function FAQDetailTemplate() {
 							})
 						}
 					/>
-					<LabelTextArea
-						label={'내용'}
-						value={contentInput}
-						onChange={(e) => {
-							setContentInput(e.target.value);
-						}}
-						onBlur={(e) =>
-							setData((prev) => {
-								if (prev) {
-									prev.content = e.target.value;
-									return { ...prev };
-								}
-							})
-						}
-						inputStyle={{ width: 400, height: 150 }}
-					/>
+					<div className='flex items-center gap-[12px]'>
+						<div className='text-xs text-gray w-[90px]'>내용</div>
+						<Upload
+							listType='picture-card'
+							maxCount={1}
+							fileList={fileList}
+							onChange={(info) => setFileList(info.fileList)}
+							customRequest={({ file, onSuccess }) => {
+								onSuccess?.({}, file); // 업로드 성공을 시뮬레이트
+							}}
+							onPreview={handlePreview} // 미리보기 핸들러 설정
+							accept='image/*'>
+							<UploadButton />
+						</Upload>
+					</div>
 				</div>
 				<div className='flex items-center gap-[8px] self-end'>
 					<Button
