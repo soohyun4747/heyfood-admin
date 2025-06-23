@@ -9,6 +9,7 @@ const tabMenuUrls: { [key: string]: string } = {
 	주문관리: pathNames.ordersManagement,
 	팝업관리: pathNames.popupsManagement,
 	FAQ관리: pathNames.FAQsManagement,
+	리뷰관리: pathNames.reviewsManagement,
 };
 
 const getTabValue = (pathName: string) => {
@@ -25,6 +26,8 @@ const getTabValue = (pathName: string) => {
 			return '팝업관리';
 		case pathNames.FAQsManagement:
 			return 'FAQ관리';
+		case pathNames.reviewsManagement:
+			return '리뷰관리';
 	}
 };
 
@@ -74,9 +77,7 @@ export function CommonTemplate({
 			/>
 			<div className='py-[10px] h-[calc(100vh-72px)] overflow-y-auto'>
 				<div className='flex items-center justify-between border-b border-stone-100 pb-[8px] px-[18px]'>
-					<div className='font-semibold text-gray-dark'>
-						{label}
-					</div>
+					<div className='font-semibold text-gray-dark'>{label}</div>
 					{allCnt !== undefined && (
 						<div className='flex items-center text-xs gap-[6px]'>
 							<div className='text-gray'>전체목록</div>

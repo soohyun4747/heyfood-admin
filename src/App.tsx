@@ -15,6 +15,7 @@ import { PopupsTemplate } from 'templates/PopupsTemplate';
 import { PopupDetailTemplate } from 'templates/PopupDetailTemplate';
 import { FAQsTemplate } from 'templates/FAQsTemplate';
 import { FAQDetailTemplate } from 'templates/FAQDetailTemplate';
+import { ReviewsTemplate } from 'templates/ReviewsTemplate';
 
 function App() {
 	const navigate = useNavigate();
@@ -94,6 +95,10 @@ function App() {
 			<Route
 				path={pathNames.FAQDetail}
 				element={<FAQDetailTemplate />}
+			/>
+			<Route
+				path={pathNames.reviewsManagement}
+				element={<ReviewsTemplate />}
 			/>
 		</Routes>
 	);

@@ -10,4 +10,5 @@ export const pathNames = {
 	popupDetail: '/popups/detail',
 	FAQsManagement: '/faqs',
 	FAQDetail: '/faqs/detail',
+	reviewsManagement: '/reviews',
 };

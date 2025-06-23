@@ -93,12 +93,16 @@ export const fetchTableData = async (
 				? query(
 						collection(db, collectionName),
 						...queryConstraints,
-						limit(total % pageSize)
+						total % pageSize
+							? limit(total % pageSize)
+							: limit(pageSize)
 				  )
 				: query(
 						collection(db, collectionName),
 						orderBy('createdAt'),
-						limit(total % pageSize)
+						total % pageSize
+							? limit(total % pageSize)
+							: limit(pageSize)
 				  );
 			querySnapshot = await getDocs(q);
 			startDocIdx = querySnapshot.docs.length - 1;
