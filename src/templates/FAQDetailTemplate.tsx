@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { collNameFAQCategories, collNameFAQs, FAQData } from './FAQsTemplate';
 import {
 	addData,
+	deleteData,
 	fetchCollectionData,
 	fetchDataWithDocId,
 	fetchFileData,
@@ -90,25 +91,31 @@ export function FAQDetailTemplate() {
 	};
 
 	const onClickEdit = async () => {
-		if (data && checkAllValuesFilled(data, fileList)) {
-			const isSuccess = await updateData(collNameFAQs, data);
-			if (isSuccess) {
-				message.success(`수정이 완료되었습니다.`);
-			} else {
-				message.success(`수정을 실패하였습니다.`);
-			}
-			navigate(pathNames.FAQsManagement);
-		} else {
-			message.error('필수 항목을 채워주세요.');
+		if (data) {
+			//기존 데이터 삭제
+			await deleteData(collNameFAQs, data.id);
+			await onClickAdd('수정을');
 		}
+		// if (data && checkAllValuesFilled(data, fileList)) {
+		// 	const isSuccess = await updateData(collNameFAQs, data);
+		// 	if (isSuccess) {
+		// 		message.success(`수정이 완료되었습니다.`);
+		// 	} else {
+		// 		message.success(`수정을 실패하였습니다.`);
+		// 	}
+		// 	navigate(pathNames.FAQsManagement);
+		// } else {
+		// 	message.error('필수 항목을 채워주세요.');
+		// }
 	};
 
-	const onClickAdd = async () => {
+	const onClickAdd = async (messageObj: string) => {
 		if (data) {
 			const uploadingData = { ...data };
 			//필수 항목이 채워져있는지 확인
 			if (checkAllValuesFilled(uploadingData, fileList)) {
 				//사진 파일 저장
+
 				if (
 					fileList[0] &&
 					uploadingData.imagePath !== fileList[0].name
@@ -122,9 +129,9 @@ export function FAQDetailTemplate() {
 
 				//데이터 저장
 				if (await addData(collNameFAQs, uploadingData)) {
-					message.success(`추가를 완료하였습니다.`);
+					message.success(`${messageObj} 완료하였습니다.`);
 				} else {
-					message.error(`추가를 실패하였습니다.`);
+					message.error(`${messageObj} 실패하였습니다.`);
 				}
 				navigate(pathNames.FAQsManagement);
 			} else {
@@ -214,7 +221,7 @@ export function FAQDetailTemplate() {
 				<div className='flex items-center gap-[8px] self-end'>
 					<Button
 						onClick={() => {
-							docId ? onClickEdit() : onClickAdd();
+							docId ? onClickEdit() : onClickAdd('추가를');
 						}}
 						variant={'solid'}
 						color='orange'
