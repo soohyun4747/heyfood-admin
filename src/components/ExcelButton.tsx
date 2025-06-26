@@ -71,6 +71,7 @@ export const ExcelButton = ({
 				});
 				return;
 			}
+
 			setLoading(true);
 			const querySnapshot = await getDocs(q);
 			const orderExcelData: OrderExcel[] = [];
@@ -133,7 +134,8 @@ export const ExcelButton = ({
 				}
 
 				if (orderData && menuData && ordererData) {
-					const vat = (menuData.price / 100) * 10 * data.quantity;
+					// const vat = (menuData.price / 100) * 10 * data.quantity;
+					const vat = 0;
 
 					orderExcelData.push({
 						no: count++,
@@ -141,8 +143,7 @@ export const ExcelButton = ({
 						orderDate: formatTimestampToDate(data.createdAt),
 						ordererId: ordererData.id,
 						ordererName: ordererData.name,
-						address:
-						data.address + ' ' + data.addressDetail,
+						address: data.address + ' ' + data.addressDetail,
 						recipient: ordererData.name,
 						contact: ordererData.phone,
 						email: ordererData.email || '',

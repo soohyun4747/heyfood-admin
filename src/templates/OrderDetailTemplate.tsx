@@ -219,6 +219,16 @@ export function OrderDetailTemplate() {
 						value={orderData?.comment}
 					/>
 					<LabelValue
+						label={'덮밥 발열'}
+						value={
+							typeof orderData?.heating === 'boolean'
+								? orderData?.heating
+									? 'o'
+									: 'x'
+								: ''
+						}
+					/>
+					<LabelValue
 						label={'스티커 문구'}
 						value={orderData?.stickerPhrase}
 					/>

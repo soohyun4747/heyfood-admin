@@ -88,18 +88,30 @@ export const OrderStatus = {
 
 export type IOrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
 
-export interface OrderData {
+export interface Vbank {
+	vbankCode?: string;
+	vbankName?: string;
+	vbankNumber?: string;
+	vbankExpDate: string;
+	vbankHolder?: string;
+}
+
+export interface OrderData extends Omit<Vbank, 'vbankCode'> {
 	id: string;
 	ordererId: string;
-	ordererType: OrdererType;
 	orderStatus: IOrderStatus;
+	ordererType: OrdererType;
 	comment?: string;
 	stickerFile: boolean;
 	stickerPhrase?: string;
 	companyName: string;
-	paymentMethodId: PaymentMethod;
+	email: string;
+	otherPhone?: string;
+	price: number;
+	paymentId: string;
+	heating?: boolean;
 	createdAt: Timestamp;
-	updatedAt?: Timestamp;
+	updatedAt: Timestamp | null;
 }
 
 export interface OrderItemData {
@@ -115,6 +127,8 @@ export interface OrderItemData {
 	createdAt: Timestamp;
 	updatedAt?: Timestamp;
 }
+
+const categoryIdDeopbab = '덮밥도시락';
 
 export function OrdersTemplate() {
 	const [total, setTotal] = useState(0);
@@ -582,6 +596,22 @@ export function OrdersTemplate() {
 						{orderInfo?.stickerPhrase}
 					</div>
 				);
+			},
+		},
+		{
+			title: '덮밥 발열',
+			dataIndex: 'heating',
+			render: (value, record) => {
+				if (record.categoryId === categoryIdDeopbab) {
+					const orderInfo = orders.find(
+						(order) => order.id === record.orderId
+					);
+					if (orderInfo?.heating) {
+						return 'o';
+					} else {
+						return <p className='text-red-500'>x</p>;
+					}
+				}
 			},
 		},
 		{

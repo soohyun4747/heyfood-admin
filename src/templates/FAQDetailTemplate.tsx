@@ -96,17 +96,6 @@ export function FAQDetailTemplate() {
 			await deleteData(collNameFAQs, data.id);
 			await onClickAdd('수정을');
 		}
-		// if (data && checkAllValuesFilled(data, fileList)) {
-		// 	const isSuccess = await updateData(collNameFAQs, data);
-		// 	if (isSuccess) {
-		// 		message.success(`수정이 완료되었습니다.`);
-		// 	} else {
-		// 		message.success(`수정을 실패하였습니다.`);
-		// 	}
-		// 	navigate(pathNames.FAQsManagement);
-		// } else {
-		// 	message.error('필수 항목을 채워주세요.');
-		// }
 	};
 
 	const onClickAdd = async (messageObj: string) => {
