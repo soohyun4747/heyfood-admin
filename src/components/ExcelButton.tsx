@@ -17,7 +17,6 @@ import {
 } from 'templates/OrdersTemplate';
 import { db } from 'config/firebase';
 import { collNameUsers, IUser } from 'templates/UsersTemplate';
-import { collNameMenus, MenuData } from 'templates/MenusTemplate';
 import { Button, message } from 'antd';
 import { FileExcelFilled } from '@ant-design/icons';
 import { fetchDataWithDocId } from 'utils/firebase';
@@ -33,7 +32,7 @@ interface OrderExcel {
 	orderTime: string;
 	orderDate: string;
 	ordererId: string;
-	ordererName: string;
+	companyName: string;
 	address: string;
 	recipient: string;
 	contact: string;
@@ -55,7 +54,6 @@ export const ExcelButton = ({
 	const [loading, setLoading] = useState<boolean>(false);
 	const [messageApi, contextHolder] = message.useMessage();
 	const [orders, setOrders] = useState<OrderData[]>([]);
-	const [menus, setMenus] = useState<MenuData[]>([]);
 	const [orderers, setOrderers] = useState<IUser[]>([]);
 
 	const handleExport = async () => {
@@ -116,24 +114,7 @@ export const ExcelButton = ({
 					});
 				}
 
-				let menuData: MenuData | undefined = menus.find(
-					(menu) => menu.id === data.menuId
-				);
-
-				if (!menuData) {
-					menuData = await fetchDataWithDocId(
-						collNameMenus,
-						data.menuId
-					);
-					setMenus((prev) => {
-						if (menuData) {
-							prev.push(menuData);
-						}
-						return prev;
-					});
-				}
-
-				if (orderData && menuData && ordererData) {
+				if (ordererData && orderData) {
 					// const vat = (menuData.price / 100) * 10 * data.quantity;
 					const vat = 0;
 
@@ -142,7 +123,7 @@ export const ExcelButton = ({
 						orderTime: formatTimestampToTime(data.createdAt),
 						orderDate: formatTimestampToDate(data.createdAt),
 						ordererId: ordererData.id,
-						ordererName: ordererData.name,
+						companyName: orderData?.companyName,
 						address: data.address + ' ' + data.addressDetail,
 						recipient: ordererData.name,
 						contact: ordererData.phone,
@@ -151,11 +132,11 @@ export const ExcelButton = ({
 							data.deliveryDate
 						),
 						driver: '',
-						menuName: data.menuId,
+						menuName: data.menuName,
 						quantity: data.quantity,
-						price: menuData.price,
+						price: data.menuPrice,
 						vat: vat,
-						total: menuData.price * data.quantity + vat,
+						total: data.menuPrice * data.quantity + vat,
 					});
 				}
 			}
@@ -166,7 +147,7 @@ export const ExcelButton = ({
 					'orderTime',
 					'orderDate',
 					'ordererId',
-					'ordererName',
+					'companyName',
 					'address',
 					'recipient',
 					'contact',

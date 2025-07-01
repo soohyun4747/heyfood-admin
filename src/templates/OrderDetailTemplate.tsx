@@ -22,7 +22,7 @@ export function OrderDetailTemplate() {
 	const [orderData, setOrderData] = useState<OrderData>();
 	const [orderItemData, setOrderItemData] = useState<OrderItemData>();
 	const [ordererData, setOrdererData] = useState<IUser>();
-	const [menuData, setMenuData] = useState<MenuData>();
+	// const [menuData, setMenuData] = useState<MenuData>();
 	const [downloadUrl, setDownloadUrl] = useState<string>('');
 
 	const docId = useDocIdStore((state) => state.id);
@@ -55,10 +55,10 @@ export function OrderDetailTemplate() {
 				collNameOrderItems,
 				docId
 			);
-			const menu: MenuData = await fetchDataWithDocId(
-				collNameMenus,
-				orderItem.menuId
-			);
+			// const menu: MenuData = await fetchDataWithDocId(
+			// 	collNameMenus,
+			// 	orderItem.menuId
+			// );
 			const order: OrderData = await fetchDataWithDocId(
 				collNameOrders,
 				orderItem.orderId
@@ -72,7 +72,7 @@ export function OrderDetailTemplate() {
 			setOrderItemData(orderItem);
 			setOrderData(order);
 			setOrdererData(orderer);
-			setMenuData(menu);
+			// setMenuData(menu);
 		}
 	};
 
@@ -139,7 +139,7 @@ export function OrderDetailTemplate() {
 					/>
 					<LabelValue
 						label={'메뉴명'}
-						value={orderItemData?.menuId}
+						value={orderItemData?.menuName}
 					/>
 					<LabelValue
 						label={'수량'}
@@ -148,9 +148,10 @@ export function OrderDetailTemplate() {
 					<LabelValue
 						label={'금액'}
 						value={
-							orderItemData && menuData
+							orderItemData
 								? `${(
-										orderItemData.quantity * menuData.price
+										orderItemData.quantity *
+										orderItemData.menuPrice
 								  ).toLocaleString('en-US')}원`
 								: undefined
 						}

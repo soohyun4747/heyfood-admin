@@ -119,7 +119,8 @@ export interface OrderItemData {
 	orderId: string;
 	ordererName: string;
 	categoryId: string;
-	menuId: string;
+	menuName: string;
+	menuPrice: number;
 	quantity: number;
 	deliveryDate: Timestamp;
 	address: string;
@@ -143,7 +144,7 @@ export function OrdersTemplate() {
 	const [loading, setLoading] = useState(true);
 	const [rowData, setRowData] = useState<OrderItemData[]>([]);
 	const [menuCategories, setMenuCategories] = useState<CategoryData[]>();
-	const [menuList, setMenuList] = useState<MenuData[]>([]);
+	// const [menuList, setMenuList] = useState<MenuData[]>([]);
 	const [orderStart, setOrderStart] = useState<Dayjs>();
 	const [orderEnd, setOrderEnd] = useState<Dayjs>();
 	const [deliveryStart, setDeliveryStart] = useState<Dayjs>();
@@ -182,7 +183,7 @@ export function OrdersTemplate() {
 			);
 		}
 
-		fetchCollectionData(collNameMenus, setMenuList);
+		// fetchCollectionData(collNameMenus, setMenuList);
 		fetchCollectionData(collNameMenuCategories, setMenuCategories);
 	};
 
@@ -513,12 +514,13 @@ export function OrdersTemplate() {
 		},
 		{
 			title: '메뉴명',
-			dataIndex: 'menuId',
+			dataIndex: 'menuName',
 			render: (value: string, record) => (
 				<div className={record.updatedAt && 'text-blue-500'}>
 					{value}
 				</div>
 			),
+			width: 350
 		},
 		{
 			title: '수량',
@@ -540,18 +542,12 @@ export function OrdersTemplate() {
 		},
 		{
 			title: '금액',
-			dataIndex: 'menuId',
-			render: (value, record) => {
-				const menuInfo = menuList.find((menu) => menu.id === value);
-
-				if (menuInfo) {
-					return (
-						<div className={record.updatedAt && 'text-blue-500'}>
-							{menuInfo.price * record.quantity}원
-						</div>
-					);
-				}
-			},
+			dataIndex: 'menuPrice',
+			render: (value, record) => (
+				<div className={record.updatedAt && 'text-blue-500'}>
+					{value * record.quantity}원
+				</div>
+			),
 		},
 		{
 			title: '결제상태',

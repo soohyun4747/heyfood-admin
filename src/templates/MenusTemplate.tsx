@@ -41,6 +41,18 @@ export interface MenuData {
 	price: number;
 	imagePaths: string[];
 	imageDetailPath: string;
+	composition?: CompositionDesserts;
+}
+
+export interface CompositionItem {
+	id: string;
+	name: string;
+	price: number;
+}
+
+export interface CompositionDesserts {
+	snacks: CompositionItem[];
+	drinks: CompositionItem[];
 }
 
 const searchFieldOptions = [{ value: 'name', label: '메뉴명' }];
