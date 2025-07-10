@@ -62,14 +62,6 @@ export const ordererType = {
 
 export type OrdererType = (typeof ordererType)[keyof typeof ordererType];
 
-export const paymentMethod = {
-	onlinePayment: 'onlinePayment',
-	offlinePayment: 'offlinePayment',
-	bankTranfer: 'bankTransfer',
-} as const;
-
-export type PaymentMethod = (typeof paymentMethod)[keyof typeof paymentMethod];
-
 export const orderStatusLabels = {
 	paid: '결제완료',
 	ready: '결제확인중',
@@ -110,9 +102,22 @@ export interface OrderData extends Omit<Vbank, 'vbankCode'> {
 	price: number;
 	paymentId: string;
 	heating?: boolean;
+	paymentMethod: IPaymentMethod;
 	createdAt: Timestamp;
 	updatedAt: Timestamp | null;
 }
+
+export const PaymentMethod = {
+	offline: 'offline',
+	vbank: 'vbank',
+} as const;
+
+export const paymentMethodLabels = {
+	offline: '현장결제',
+	vbank: '가상결제'
+}
+
+export type IPaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod];
 
 export interface OrderItemData {
 	id: string;
@@ -548,6 +553,21 @@ export function OrdersTemplate() {
 					{value * record.quantity}원
 				</div>
 			),
+		},
+		{
+			title: '결제방법',
+			dataIndex: 'paymentMethod',
+			render: (value: string, record) => {
+				const orderInfo = orders.find(
+					(order) => order.id === record.orderId
+				);
+
+				return (
+					<div className={record.updatedAt && 'text-blue-500'}>
+						{orderInfo && paymentMethodLabels[orderInfo?.paymentMethod]}
+					</div>
+				);
+			},
 		},
 		{
 			title: '결제상태',

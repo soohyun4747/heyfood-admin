@@ -11,6 +11,7 @@ import {
 	ordererType,
 	OrderItemData,
 	orderStatusLabels,
+	paymentMethodLabels,
 } from './OrdersTemplate';
 import { formatTimestampToDate, formatTimestampToTime } from 'utils/time';
 import { collNameUsers, IUser } from './UsersTemplate';
@@ -154,6 +155,13 @@ export function OrderDetailTemplate() {
 										orderItemData.menuPrice
 								  ).toLocaleString('en-US')}원`
 								: undefined
+						}
+					/>
+					<LabelValue
+						label={'결제방법'}
+						value={
+							orderData &&
+							paymentMethodLabels[orderData?.paymentMethod]
 						}
 					/>
 					<LabelValue
