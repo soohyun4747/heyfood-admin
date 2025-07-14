@@ -7,6 +7,7 @@ import {
 	StartDocInfo,
 	fetchCollectionData,
 	deleteData,
+	deleteFile,
 } from 'utils/firebase';
 import { PAGE_SIZE } from 'const/table';
 import { Timestamp } from 'firebase/firestore';
@@ -177,6 +178,7 @@ export function MenusTemplate() {
 		if (deleteMenu) {
 			setDeleteMenu(undefined);
 			const isSuccess = await deleteData(collNameMenus, deleteMenu.id);
+			await deleteFile(deleteMenu.imagePath);
 			if (isSuccess) {
 				message.success('삭제를 완료하였습니다.');
 				await initFetchData();
