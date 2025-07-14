@@ -14,6 +14,7 @@ import {
 import { Timestamp } from 'firebase/firestore';
 import {
 	deleteData,
+	deleteFile,
 	fetchCollectionData,
 	fetchSearchData,
 	fetchTableData,
@@ -158,6 +159,7 @@ export function FAQsTemplate() {
 		if (deleteItem) {
 			setDeleteItem(undefined);
 			const isSuccess = await deleteData(collNameFAQs, deleteItem.id);
+			await deleteFile(deleteItem.imagePath);
 			if (isSuccess) {
 				message.success('삭제를 완료하였습니다.');
 				await initFetchData();

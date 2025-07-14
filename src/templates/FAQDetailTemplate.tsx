@@ -109,7 +109,7 @@ export function FAQDetailTemplate() {
 					fileList[0] &&
 					uploadingData.imagePath !== fileList[0].name
 				) {
-					const path = `menus/${uploadingData.id}_detail`;
+					const path = `faqs/${uploadingData.id}`;
 					await uploadFileData(fileList[0], path);
 					uploadingData.imagePath = path;
 				} else {

@@ -13,6 +13,7 @@ import {
 import { Timestamp } from 'firebase/firestore';
 import {
 	deleteData,
+	deleteFile,
 	fetchFileData,
 	fetchSearchData,
 	fetchTableData,
@@ -148,6 +149,7 @@ export function PopupsTemplate() {
 		if (deleteItem) {
 			setDeleteItem(undefined);
 			const isSuccess = await deleteData(collNamePopups, deleteItem.id);
+			await deleteFile(deleteItem.imagePath);
 			if (isSuccess) {
 				message.success('삭제를 완료하였습니다.');
 				await initFetchData();
