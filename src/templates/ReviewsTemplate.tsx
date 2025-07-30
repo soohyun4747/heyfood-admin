@@ -1,10 +1,8 @@
 import { Input, message, Modal, Pagination, Select } from 'antd';
 import Table, { ColumnsType } from 'antd/es/table';
-import { pathNames } from 'const/pathNames';
 import { PAGE_SIZE } from 'const/table';
 import { Timestamp } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useDocIdStore } from 'stores/docIdStore';
 import {
 	deleteData,
@@ -203,7 +201,7 @@ export function ReviewsTemplate() {
 
 	return (
 		<CommonTemplate
-			label={'팝업관리'}
+			label={'리뷰관리'}
 			allCnt={total}>
 			<div className='flex flex-col gap-[12px]'>
 				<div className='flex items-center gap-[8px]'>
