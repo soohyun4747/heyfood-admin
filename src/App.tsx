@@ -16,6 +16,8 @@ import { PopupDetailTemplate } from 'templates/PopupDetailTemplate';
 import { FAQsTemplate } from 'templates/FAQsTemplate';
 import { FAQDetailTemplate } from 'templates/FAQDetailTemplate';
 import { ReviewsTemplate } from 'templates/ReviewsTemplate';
+import { PaymentsTemplate } from 'templates/PaymentsTemplate';
+import { PaymentDetailTemplate } from 'templates/PaymentDetailTemplate';
 
 function App() {
 	const navigate = useNavigate();
@@ -79,6 +81,14 @@ function App() {
 			<Route
 				path={pathNames.orderDetail}
 				element={<OrderDetailTemplate />}
+			/>
+			<Route
+				path={pathNames.paymentsManagement}
+				element={<PaymentsTemplate />}
+			/>
+			<Route
+				path={pathNames.paymentDetail}
+				element={<PaymentDetailTemplate />}
 			/>
 			<Route
 				path={pathNames.popupsManagement}

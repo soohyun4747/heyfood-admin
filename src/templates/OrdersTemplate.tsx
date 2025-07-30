@@ -62,7 +62,8 @@ export const ordererType = {
 
 export type OrdererType = (typeof ordererType)[keyof typeof ordererType];
 
-export const orderStatusLabels = {
+export const orderStatusLabels: { [key: string]: string } = {
+	complete: '주문완료',
 	paid: '결제완료',
 	ready: '결제확인중',
 	failed: '결제실패',
@@ -71,6 +72,7 @@ export const orderStatusLabels = {
 };
 
 export const OrderStatus = {
+	complete: 'complete',
 	paid: 'paid',
 	ready: 'ready',
 	failed: 'failed',
@@ -91,6 +93,7 @@ export interface Vbank {
 export interface OrderData extends Omit<Vbank, 'vbankCode'> {
 	id: string;
 	ordererId: string;
+	ordererName: string;
 	orderStatus: IOrderStatus;
 	ordererType: OrdererType;
 	comment?: string;
@@ -99,23 +102,28 @@ export interface OrderData extends Omit<Vbank, 'vbankCode'> {
 	companyName: string;
 	email: string;
 	otherPhone?: string;
+	stickerPrice: number;
+	deliveryPrice: number;
 	price: number;
 	paymentId: string;
 	heating?: boolean;
 	paymentMethod: IPaymentMethod;
+	refundBankCode?: string;
+	refundAccount?: string;
+	refundHolder?: string;
 	createdAt: Timestamp;
 	updatedAt: Timestamp | null;
 }
 
 export const PaymentMethod = {
-	offline: 'offline',
-	vbank: 'vbank',
+	transfer: 'transfer',
+	card: 'card',
 } as const;
 
-export const paymentMethodLabels = {
-	offline: '현장결제',
-	vbank: '가상결제'
-}
+export const paymentMethodLabels: { [key: string]: string } = {
+	transfer: '계좌이체',
+	card: '카드결제',
+};
 
 export type IPaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod];
 
@@ -471,106 +479,154 @@ export function OrdersTemplate() {
 		{
 			title: '주문일',
 			dataIndex: 'createdAt',
-			render: (value: Timestamp, record) => (
-				<div className={`${record.updatedAt && 'text-blue-500'}`}>
-					{new Date(
-						value.seconds * 1000 + value.nanoseconds / 1000000
-					).toLocaleString()}
-				</div>
-			),
+			render: (value: Timestamp, record) => {
+				const orderInfo = orders.find(
+					(order) => order.id === record.orderId
+				);
+
+				return (
+					<div
+						className={`${
+							orderInfo?.updatedAt ? 'text-blue-500' : ''
+						}`}>
+						{new Date(
+							value.seconds * 1000 + value.nanoseconds / 1000000
+						).toLocaleString()}
+					</div>
+				);
+			},
 		},
 		{
 			title: '배달일',
 			dataIndex: 'deliveryDate',
-			render: (value: Timestamp, record) => (
-				<div className={record.updatedAt && 'text-blue-500'}>
-					{new Date(
-						value.seconds * 1000 + value.nanoseconds / 1000000
-					).toLocaleString()}
-				</div>
-			),
+			render: (value: Timestamp, record) => {
+				const orderInfo = orders.find(
+					(order) => order.id === record.orderId
+				);
+
+				return (
+					<div
+						className={orderInfo?.updatedAt ? 'text-blue-500' : ''}>
+						{new Date(
+							value.seconds * 1000 + value.nanoseconds / 1000000
+						).toLocaleString()}
+					</div>
+				);
+			},
 		},
 		{
 			title: '주문자명',
 			dataIndex: 'ordererName',
-			render: (value: string, record) => (
-				<div className={record.updatedAt && 'text-blue-500'}>
-					{value}
-				</div>
-			),
-		},
-		{
-			title: '주소',
-			dataIndex: 'address',
-			render: (value, record) => (
-				<div className={record.updatedAt && 'text-blue-500'}>
-					{value}
-				</div>
-			),
-		},
-		{
-			title: '상세주소',
-			dataIndex: 'addressDetail',
-			render: (value, record) => (
-				<div className={record.updatedAt && 'text-blue-500'}>
-					{value}
-				</div>
-			),
-		},
-		{
-			title: '메뉴명',
-			dataIndex: 'menuName',
-			render: (value: string, record) => (
-				<div className={record.updatedAt && 'text-blue-500'}>
-					{value}
-				</div>
-			),
-			width: 350
-		},
-		{
-			title: '수량',
-			dataIndex: 'quantity',
-			render: (value: string, record) => (
-				<div className={record.updatedAt && 'text-blue-500'}>
-					{value}개
-				</div>
-			),
-		},
-		{
-			title: '요청사항',
-			dataIndex: 'comment',
-			render: (value: string, record) => (
-				<div className={record.updatedAt && 'text-blue-500'}>
-					{value}
-				</div>
-			),
-		},
-		{
-			title: '금액',
-			dataIndex: 'menuPrice',
-			render: (value, record) => (
-				<div className={record.updatedAt && 'text-blue-500'}>
-					{value * record.quantity}원
-				</div>
-			),
-		},
-		{
-			title: '결제방법',
-			dataIndex: 'paymentMethod',
 			render: (value: string, record) => {
 				const orderInfo = orders.find(
 					(order) => order.id === record.orderId
 				);
 
 				return (
-					<div className={record.updatedAt && 'text-blue-500'}>
-						{orderInfo && paymentMethodLabels[orderInfo?.paymentMethod]}
+					<div
+						className={orderInfo?.updatedAt ? 'text-blue-500' : ''}>
+						{value}
 					</div>
 				);
 			},
 		},
 		{
-			title: '결제상태',
+			title: '주소',
+			dataIndex: 'address',
+			render: (value, record) => {
+				const orderInfo = orders.find(
+					(order) => order.id === record.orderId
+				);
+
+				return (
+					<div
+						className={orderInfo?.updatedAt ? 'text-blue-500' : ''}>
+						{value}
+					</div>
+				);
+			},
+		},
+		{
+			title: '상세주소',
+			dataIndex: 'addressDetail',
+			render: (value, record) => {
+				const orderInfo = orders.find(
+					(order) => order.id === record.orderId
+				);
+
+				return (
+					<div
+						className={orderInfo?.updatedAt ? 'text-blue-500' : ''}>
+						{value}
+					</div>
+				);
+			},
+		},
+		{
+			title: '메뉴명',
+			dataIndex: 'menuName',
+			render: (value: string, record) => {
+				const orderInfo = orders.find(
+					(order) => order.id === record.orderId
+				);
+				return (
+					<div
+						className={orderInfo?.updatedAt ? 'text-blue-500' : ''}>
+						{value}
+					</div>
+				);
+			},
+			width: 350,
+		},
+		{
+			title: '수량',
+			dataIndex: 'quantity',
+			render: (value: string, record) => {
+				const orderInfo = orders.find(
+					(order) => order.id === record.orderId
+				);
+
+				return (
+					<div
+						className={orderInfo?.updatedAt ? 'text-blue-500' : ''}>
+						{value}개
+					</div>
+				);
+			},
+		},
+		{
+			title: '요청사항',
+			dataIndex: 'comment',
+			render: (value: string, record) => {
+				const orderInfo = orders.find(
+					(order) => order.id === record.orderId
+				);
+
+				return (
+					<div
+						className={orderInfo?.updatedAt ? 'text-blue-500' : ''}>
+						{value}
+					</div>
+				);
+			},
+		},
+		{
+			title: '금액',
+			dataIndex: 'menuPrice',
+			render: (value, record) => {
+				const orderInfo = orders.find(
+					(order) => order.id === record.orderId
+				);
+				return (
+					<div
+						className={orderInfo?.updatedAt ? 'text-blue-500' : ''}>
+						{value * record.quantity}원
+					</div>
+				);
+			},
+		},
+		{
+			title: '주문상태',
 			dataIndex: 'status',
 			render: (value: string, record) => {
 				const orderInfo = orders.find(
@@ -578,14 +634,21 @@ export function OrdersTemplate() {
 				);
 
 				return (
-					<div className={record.updatedAt && 'text-blue-500'}>
+					<div
+						className={
+							orderInfo?.orderStatus === 'cancelled'
+								? 'text-red-500'
+								: orderInfo?.updatedAt
+								? 'text-blue-500'
+								: ''
+						}>
 						{orderInfo && orderStatusLabels[orderInfo?.orderStatus]}
 					</div>
 				);
 			},
 		},
 		{
-			title: '스티커 파일',
+			title: '스티커 사진',
 			dataIndex: 'stickerFile',
 			render: (value: string, record) => {
 				const orderInfo = orders.find(
@@ -593,7 +656,8 @@ export function OrdersTemplate() {
 				);
 
 				return (
-					<div className={record.updatedAt && 'text-blue-500'}>
+					<div
+						className={orderInfo?.updatedAt ? 'text-blue-500' : ''}>
 						{orderInfo?.stickerFile ? 'o' : ''}
 					</div>
 				);
@@ -608,7 +672,8 @@ export function OrdersTemplate() {
 				);
 
 				return (
-					<div className={record.updatedAt && 'text-blue-500'}>
+					<div
+						className={orderInfo?.updatedAt ? 'text-blue-500' : ''}>
 						{orderInfo?.stickerPhrase}
 					</div>
 				);
@@ -623,9 +688,16 @@ export function OrdersTemplate() {
 						(order) => order.id === record.orderId
 					);
 					if (orderInfo?.heating) {
-						return 'o';
+						return (
+							<p
+								className={
+									orderInfo?.updatedAt ? 'text-blue-500' : ''
+								}>
+								o
+							</p>
+						);
 					} else {
-						return <p className='text-red-500'>x</p>;
+						return <p className={'text-red-500'}>x</p>;
 					}
 				}
 			},

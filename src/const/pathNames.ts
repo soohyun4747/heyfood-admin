@@ -6,6 +6,8 @@ export const pathNames = {
 	menuDetail: '/menus/detail',
 	ordersManagement: '/orders',
 	orderDetail: '/orders/detail',
+	paymentsManagement: '/payments',
+	paymentDetail: '/payments/detail',
 	popupsManagement: '/popups',
 	popupDetail: '/popups/detail',
 	FAQsManagement: '/faqs',

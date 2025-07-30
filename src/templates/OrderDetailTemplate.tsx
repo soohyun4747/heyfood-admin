@@ -15,9 +15,39 @@ import {
 } from './OrdersTemplate';
 import { formatTimestampToDate, formatTimestampToTime } from 'utils/time';
 import { collNameUsers, IUser } from './UsersTemplate';
-import { collNameMenus, MenuData } from './MenusTemplate';
 import { Button } from 'antd';
 import { fetchDataWithDocId, fetchImageUrl } from 'utils/firebase';
+
+export const bankCodes: {[key:string]: string} = {
+	'001': '한국은행',
+	'002': '산업은행',
+	'003': '기업은행',
+	'004': '국민은행',
+	'005': '외환은행',
+	'007': '수협중앙회',
+	'008': '수출입은행',
+	'011': '농협중앙회',
+	'012': '농협회원조합',
+	'020': '우리은행',
+	'023': 'SC은행',
+	'026': '서울은행',
+	'027': '한국씨티은행',
+	'031': '대구은행',
+	'032': '부산은행',
+	'034': '광주은행',
+	'035': '제주은행',
+	'037': '전북은행',
+	'039': '경남은행',
+	'045': '새마을금고연합회',
+	'048': '신협중앙회',
+	'050': '상호저축은행',
+	'071': '우체국',
+	'081': '하나은행',
+	'088': '신한은행',
+	'089': '케이뱅크',
+	'090': '카카오뱅크',
+
+};
 
 export function OrderDetailTemplate() {
 	const [orderData, setOrderData] = useState<OrderData>();
@@ -99,7 +129,7 @@ export function OrderDetailTemplate() {
 	};
 	return (
 		<CommonTemplate
-			label={'회원정보'}
+			label={'주문정보'}
 			rightElement={
 				<Button
 					onClick={() => navigate(-1)}
