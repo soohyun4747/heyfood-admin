@@ -620,7 +620,7 @@ export function OrdersTemplate() {
 				return (
 					<div
 						className={orderInfo?.updatedAt ? 'text-blue-500' : ''}>
-						{value * record.quantity}원
+						{(value * record.quantity).toLocaleString()}원
 					</div>
 				);
 			},

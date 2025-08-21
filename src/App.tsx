@@ -1,7 +1,7 @@
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { pathNames } from './const/pathNames';
 import { useEffect } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from 'config/firebase';
 import '@ant-design/v5-patch-for-react-19';
 import { LoginTemplate } from 'templates/LoginTemplate';
@@ -24,33 +24,24 @@ function App() {
 	const location = useLocation();
 
 	useEffect(() => {
-		//test
-		// addUsers100();
-		// generateRandomOrderData();
+		if (typeof window === 'undefined') return;
 
-		checkAuthority();
-	}, []);
+		const unsub = onAuthStateChanged(auth, (user) => {
+			const isLoginPage = location.pathname === pathNames.login;			
 
-	const checkAuthority = async () => {
-		const email = localStorage.getItem('email');
-		const password = localStorage.getItem('password');
-
-		try {
-			if (email && password) {
-				await signInWithEmailAndPassword(auth, email, password);
-
-				//로그인 페이지로 들어온 경우 이미 로그인이 되어있으면 회원관리 페이지로
-				if (location.pathname === pathNames.login) {
-					navigate(pathNames.userManagement);
-				}
+			if (user) {
+				// 이미 로그인된 상태
+				if (isLoginPage)
+					navigate(pathNames.userManagement, { replace: true });
+				// 로그인 외 페이지면 그대로 둠
 			} else {
-				navigate(pathNames.login);
+				// 미로그인 상태
+				if (!isLoginPage) navigate(pathNames.login, { replace: true });
 			}
-		} catch (error) {
-			console.error(error);
-			navigate(pathNames.login);
-		}
-	};
+		});
+
+		return () => unsub();
+	}, [location.pathname, navigate]);
 
 	return (
 		<Routes>

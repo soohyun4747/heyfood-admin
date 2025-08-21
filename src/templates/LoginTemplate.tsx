@@ -3,7 +3,6 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { useNavigate } from 'react-router-dom';
 import { pathNames } from '../const/pathNames';
-import { useEffect } from 'react';
 
 type FieldType = {
 	email?: string;
@@ -21,9 +20,7 @@ export function LoginTemplate() {
 					values.email,
 					values.password
 				);
-				localStorage.setItem('email', values.email);
-				localStorage.setItem('password', values.password);
-				navigate(pathNames.userManagement);
+				navigate(pathNames.userManagement, { replace: true });
 			} catch (error) {
 				console.error(error);
 				window.alert('없는 이메일이거나 비밀번호가 맞지 않습니다.');

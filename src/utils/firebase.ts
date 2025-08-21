@@ -36,13 +36,25 @@ export interface StartDocInfo {
 	doc: QueryDocumentSnapshot<DocumentData, DocumentData>;
 }
 
+// export const fetchTotalCount = async (path: string) => {
+// 	try {
+// 		const querySnapshot = await getDocs(collection(db, path));
+// 		return querySnapshot.size; // `size` will give the number of documents in the snapshot
+// 	} catch (error) {
+// 		console.error('Error fetching user count:', error);
+// 	}
+// };
+
 export const fetchTotalCount = async (path: string) => {
-	try {
-		const querySnapshot = await getDocs(collection(db, path));
-		return querySnapshot.size; // `size` will give the number of documents in the snapshot
-	} catch (error) {
-		console.error('Error fetching user count:', error);
-	}
+  try {
+    // path는 "users" 처럼 슬래시 없이 컬렉션 이름만 (하위컬렉션이면 "companies/ABC/users")
+    const collRef = collection(db, path);
+    const snapshot = await getCountFromServer(collRef);
+    return snapshot.data().count; // number
+  } catch (error) {
+    console.error("Error fetching count:", error);
+    return 0;
+  }
 };
 
 export const fetchTableData = async (

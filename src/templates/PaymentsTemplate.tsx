@@ -375,7 +375,7 @@ export function PaymentsTemplate() {
 			render: (value, record) => {
 				return (
 					<div className={record?.updatedAt ? 'text-blue-500' : ''}>
-						{value}원
+						{value.toLocaleString()}원
 					</div>
 				);
 			},
