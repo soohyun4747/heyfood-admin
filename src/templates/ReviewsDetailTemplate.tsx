@@ -48,7 +48,7 @@ export function ReviewsDetailTemplate() {
                         )) as IReview | undefined;
 
                         if (reviewData) {
-                                setNameInput(reviewData.userName ?? '');
+                                setNameInput(reviewData.name ?? '');
                                 setEmailInput(reviewData.email ?? '');
                                 setCommentInput(reviewData.comment ?? '');
 
@@ -59,7 +59,7 @@ export function ReviewsDetailTemplate() {
                 } else {
                         const initData: IReview = {
                                 id: uuidv4(),
-                                userName: '',
+                                name: '',
                                 email: '',
                                 comment: '',
                                 imagePaths: [],
@@ -89,12 +89,12 @@ export function ReviewsDetailTemplate() {
 
                 const uploadingData: IReview = {
                         ...data,
-                        userName: nameInput.trim(),
+                        name: nameInput.trim(),
                         email: emailInput.trim(),
                         comment: commentInput,
                 };
 
-                if (!uploadingData.userName || !uploadingData.email || !uploadingData.comment) {
+                if (!uploadingData.name || !uploadingData.email || !uploadingData.comment) {
                         message.error('필수 항목을 입력해주세요.');
                         return;
                 }
@@ -147,7 +147,7 @@ export function ReviewsDetailTemplate() {
                                                                 prev
                                                                         ? {
                                                                                   ...prev,
-                                                                                  userName: value,
+                                                                                  name: value,
                                                                           }
                                                                         : prev
                                                         );
