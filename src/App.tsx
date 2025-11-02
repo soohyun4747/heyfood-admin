@@ -16,6 +16,7 @@ import { PopupDetailTemplate } from 'templates/PopupDetailTemplate';
 import { FAQsTemplate } from 'templates/FAQsTemplate';
 import { FAQDetailTemplate } from 'templates/FAQDetailTemplate';
 import { ReviewsTemplate } from 'templates/ReviewsTemplate';
+import { ReviewsDetailTemplate } from 'templates/ReviewsDetailTemplate';
 import { PaymentsTemplate } from 'templates/PaymentsTemplate';
 import { PaymentDetailTemplate } from 'templates/PaymentDetailTemplate';
 
@@ -97,12 +98,16 @@ function App() {
 				path={pathNames.FAQDetail}
 				element={<FAQDetailTemplate />}
 			/>
-			<Route
-				path={pathNames.reviewsManagement}
-				element={<ReviewsTemplate />}
-			/>
-		</Routes>
-	);
+                        <Route
+                                path={pathNames.reviewsManagement}
+                                element={<ReviewsTemplate />}
+                        />
+                        <Route
+                                path={pathNames.reviewsDetail}
+                                element={<ReviewsDetailTemplate />}
+                        />
+                </Routes>
+        );
 }
 
 export default App;

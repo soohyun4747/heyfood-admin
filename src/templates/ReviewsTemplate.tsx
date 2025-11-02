@@ -1,9 +1,11 @@
-import { Input, message, Modal, Pagination, Select } from 'antd';
+import { Button, Input, message, Modal, Pagination, Select } from 'antd';
 import Table, { ColumnsType } from 'antd/es/table';
 import { PAGE_SIZE } from 'const/table';
 import { Timestamp } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { useDocIdStore } from 'stores/docIdStore';
+import { useNavigate } from 'react-router-dom';
+import { pathNames } from 'const/pathNames';
 import {
 	deleteData,
 	fetchSearchData,
@@ -14,16 +16,17 @@ import {
 import { CommonTemplate } from './CommonTemplate';
 
 export interface IReview {
-	id: string;
-	email: string;
-	comment: string;
-	imagePaths: string[];
-	createdAt: Timestamp;
+        id: string;
+        userName?: string;
+        email: string;
+        comment: string;
+        imagePaths: string[];
+        createdAt: Timestamp;
 }
 
 const searchFieldOptions = [{ value: 'email', label: '이메일' }];
 
-const collNameReviews = 'reviews';
+export const collNameReviews = 'reviews';
 
 export function ReviewsTemplate() {
 	const [rowData, setRowData] = useState<IReview[]>([]);
@@ -43,6 +46,7 @@ export function ReviewsTemplate() {
 	const { Search } = Input;
 
 	const setDocId = useDocIdStore((state) => state.setId);
+	const navigate = useNavigate();
 
 	useEffect(() => {
 		initFetchData();
@@ -167,16 +171,20 @@ export function ReviewsTemplate() {
 		}
 	};
 
-	const columns: ColumnsType<IReview> = [
-		{
-			title: '리뷰 id',
-			dataIndex: 'id',
-		},
-		{
-			title: '이메일',
-			dataIndex: 'email',
-		},
-		{
+        const columns: ColumnsType<IReview> = [
+                {
+                        title: '리뷰 id',
+                        dataIndex: 'id',
+                },
+                {
+                        title: '이름',
+                        dataIndex: 'userName',
+                },
+                {
+                        title: '이메일',
+                        dataIndex: 'email',
+                },
+                {
 			title: '내용',
 			dataIndex: 'comment',
 		},
@@ -184,11 +192,26 @@ export function ReviewsTemplate() {
 			title: '작성일',
 			dataIndex: 'createdAt',
 			render: (value: Timestamp) => value.toDate().toLocaleDateString(),
-		},
-		{
-			title: '',
-			fixed: 'right',
-			width: 40,
+                },
+                {
+                        title: '',
+                        fixed: 'right',
+                        width: 70,
+                        render: (value, record) => (
+                                <div
+                                        className='text-blue-600 hover:cursor-pointer'
+                                        onClick={() => {
+                                                setDocId(record.id);
+                                                navigate(pathNames.reviewsDetail);
+                                        }}>
+                                        보기/수정
+                                </div>
+                        ),
+                },
+                {
+                        title: '',
+                        fixed: 'right',
+                        width: 40,
 			render: (value, record) => (
 				<div
 					className='text-red-500 hover:cursor-pointer'
@@ -203,22 +226,34 @@ export function ReviewsTemplate() {
 		<CommonTemplate
 			label={'리뷰관리'}
 			allCnt={total}>
-			<div className='flex flex-col gap-[12px]'>
-				<div className='flex items-center gap-[8px]'>
-					<Select
-						value={searchFieldOptions[0].value}
-						style={{ width: 120 }}
-						options={searchFieldOptions}
-					/>
-					<Search
-						value={searchValue}
-						placeholder='input search text'
-						allowClear
-						style={{ width: 200 }}
-						onChange={onChangeSearchValue}
-					/>
-				</div>
-				<Table<IReview>
+                        <div className='flex flex-col gap-[12px]'>
+                                <div className='flex items-center justify-between'>
+                                        <div className='flex items-center gap-[8px]'>
+                                                <Select
+                                                        value={searchField}
+                                                        style={{ width: 120 }}
+                                                        options={searchFieldOptions}
+                                                        onChange={onChangeSearchField}
+                                                />
+                                                <Search
+                                                        value={searchValue}
+                                                        placeholder='input search text'
+                                                        allowClear
+                                                        style={{ width: 200 }}
+                                                        onChange={onChangeSearchValue}
+                                                />
+                                        </div>
+                                        <Button
+                                                onClick={() => {
+                                                        setDocId(undefined);
+                                                        navigate(pathNames.reviewsDetail);
+                                                }}
+                                                variant='outlined'
+                                                color='orange'>
+                                                리뷰추가
+                                        </Button>
+                                </div>
+                                <Table<IReview>
 					size={'small'}
 					className={'hey-table'}
 					columns={columns}

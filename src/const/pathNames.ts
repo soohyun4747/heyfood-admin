@@ -10,7 +10,8 @@ export const pathNames = {
 	paymentDetail: '/payments/detail',
 	popupsManagement: '/popups',
 	popupDetail: '/popups/detail',
-	FAQsManagement: '/faqs',
-	FAQDetail: '/faqs/detail',
-	reviewsManagement: '/reviews',
+        FAQsManagement: '/faqs',
+        FAQDetail: '/faqs/detail',
+        reviewsManagement: '/reviews',
+        reviewsDetail: '/reviews/detail',
 };
