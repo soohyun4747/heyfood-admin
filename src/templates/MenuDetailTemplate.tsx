@@ -27,14 +27,6 @@ import { UploadButton } from 'components/UploadButton';
 import { pathNames } from 'const/pathNames';
 import { LabelTextArea } from 'components/LabelTextArea';
 
-const htmlBreakRegex = /<br\s*\/?>(\r\n|\r|\n)?/gi;
-
-const convertDescriptionForTextarea = (description: string) =>
-        description.replace(htmlBreakRegex, '\n');
-
-const convertDescriptionForStorage = (description: string) =>
-        description.replace(/\r\n|\r|\n/g, '<br />');
-
 export function MenuDetailTemplate() {
 	const [data, setData] = useState<MenuData>();
 	const [menuCategoryOptions, setMenuCategoryOptions] = useState<Option[]>();
@@ -78,18 +70,12 @@ export function MenuDetailTemplate() {
                                         );
                                 }
 
-                                const descriptionForTextarea =
-                                        convertDescriptionForTextarea(
-                                                menuData.description ?? ''
-                                        );
-
                                 setNameInput(menuData.name);
                                 setPriceInput(menuData.price);
                                 setIngredInput(menuData.ingredient);
-                                setDescInput(descriptionForTextarea);
+                                setDescInput(menuData.description);
                                 setData({
                                         ...menuData,
-                                        description: descriptionForTextarea,
                                 });
                         }
                 } else {
@@ -180,10 +166,7 @@ export function MenuDetailTemplate() {
                         if (checkAllValuesFilled(uploadingData, fileList)) {
                                 //주문내역에서 검색에 용이하게 하기 위해 id랑 name을 통일
                                 uploadingData.id = uploadingData.name;
-                                uploadingData.description =
-                                        convertDescriptionForStorage(
-                                                uploadingData.description
-                                        );
+                                uploadingData.description = uploadingData.description
 
                                 //사진 파일 저장
                                 let idx = 1;

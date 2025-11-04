@@ -18,14 +18,6 @@ import { LabelTextField } from 'components/LabelTexfield';
 import { LabelTextArea } from 'components/LabelTextArea';
 import { UploadButton } from 'components/UploadButton';
 
-const htmlBreakRegex = /<br\s*\/?>(\r\n|\r|\n)?/gi;
-
-const convertCommentForTextarea = (comment: string) =>
-        comment.replace(htmlBreakRegex, '\n');
-
-const convertCommentForStorage = (comment: string) =>
-        comment.replace(/\r\n|\r|\n/g, '<br />');
-
 export function ReviewsDetailTemplate() {
         const [data, setData] = useState<IReview>();
         const [titleInput, setTitleInput] = useState('');
@@ -57,17 +49,13 @@ export function ReviewsDetailTemplate() {
                         )) as IReview | undefined;
 
                         if (reviewData) {
-                                const commentForTextarea = convertCommentForTextarea(
-                                        reviewData.comment ?? ''
-                                );
 
                                 setTitleInput(reviewData.title ?? '');
                                 setNameInput(reviewData.name ?? '');
                                 setEmailInput(reviewData.email ?? '');
-                                setCommentInput(commentForTextarea);
+                                setCommentInput(reviewData.comment ?? '')
                                 setData({
                                         ...reviewData,
-                                        comment: commentForTextarea,
                                 });
 
                                 if (reviewData.imagePaths?.length) {
@@ -112,7 +100,7 @@ export function ReviewsDetailTemplate() {
                         title: titleInput.trim(),
                         name: nameInput.trim(),
                         email: emailInput.trim(),
-                        comment: convertCommentForStorage(commentInput),
+                        comment: commentInput.trim()
                 };
 
                 if (
