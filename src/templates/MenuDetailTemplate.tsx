@@ -27,6 +27,14 @@ import { UploadButton } from 'components/UploadButton';
 import { pathNames } from 'const/pathNames';
 import { LabelTextArea } from 'components/LabelTextArea';
 
+const htmlBreakRegex = /<br\s*\/?>(\r\n|\r|\n)?/gi;
+
+const convertDescriptionForTextarea = (description: string) =>
+        description.replace(htmlBreakRegex, '\n');
+
+const convertDescriptionForStorage = (description: string) =>
+        description.replace(/\r\n|\r|\n/g, '<br />');
+
 export function MenuDetailTemplate() {
 	const [data, setData] = useState<MenuData>();
 	const [menuCategoryOptions, setMenuCategoryOptions] = useState<Option[]>();
@@ -61,21 +69,30 @@ export function MenuDetailTemplate() {
 				setData
 			)) as MenuData | undefined;
 
-			if (menuData) {
-				fetchFileData(menuData.imagePaths, setFileList);
-				if (menuData.imageDetailPath) {
-					fetchFileData(
-						[menuData.imageDetailPath],
-						setDetailFileList
-					);
-				}
+                        if (menuData) {
+                                fetchFileData(menuData.imagePaths, setFileList);
+                                if (menuData.imageDetailPath) {
+                                        fetchFileData(
+                                                [menuData.imageDetailPath],
+                                                setDetailFileList
+                                        );
+                                }
 
-				setNameInput(menuData.name);
-				setPriceInput(menuData.price);
-				setIngredInput(menuData.ingredient);
-				setDescInput(menuData.description);
-			}
-		} else {
+                                const descriptionForTextarea =
+                                        convertDescriptionForTextarea(
+                                                menuData.description ?? ''
+                                        );
+
+                                setNameInput(menuData.name);
+                                setPriceInput(menuData.price);
+                                setIngredInput(menuData.ingredient);
+                                setDescInput(descriptionForTextarea);
+                                setData({
+                                        ...menuData,
+                                        description: descriptionForTextarea,
+                                });
+                        }
+                } else {
 			if (categoryOptions) {
 				createSetInitMenuData(categoryOptions);
 			}
@@ -148,25 +165,30 @@ export function MenuDetailTemplate() {
 		setPreviewVisible(true); // 모달 표시
 	};
 
-	const onClickAdd = async (messageObj: string) => {
-		if (data) {
-			const uploadingData = { ...data };
-			uploadingData.imagePaths = [];
+        const onClickAdd = async (messageObj: string) => {
+                if (data) {
+                        const uploadingData = { ...data };
+                        uploadingData.imagePaths = [];
+                        uploadingData.description = descInput;
 
-			//겹치는 이름이 없는지 확인
-			if (!(await isNameUnique(uploadingData))) {
-				return;
-			}
+                        //겹치는 이름이 없는지 확인
+                        if (!(await isNameUnique(uploadingData))) {
+                                return;
+                        }
 
 			//모든 항목이 채워져있는지 확인
-			if (checkAllValuesFilled(uploadingData, fileList)) {
-				//주문내역에서 검색에 용이하게 하기 위해 id랑 name을 통일
-				uploadingData.id = uploadingData.name;
+                        if (checkAllValuesFilled(uploadingData, fileList)) {
+                                //주문내역에서 검색에 용이하게 하기 위해 id랑 name을 통일
+                                uploadingData.id = uploadingData.name;
+                                uploadingData.description =
+                                        convertDescriptionForStorage(
+                                                uploadingData.description
+                                        );
 
-				//사진 파일 저장
-				let idx = 1;
-				for (const file of fileList) {
-					if (!uploadingData.imagePaths.includes(file.name)) {
+                                //사진 파일 저장
+                                let idx = 1;
+                                for (const file of fileList) {
+                                        if (!uploadingData.imagePaths.includes(file.name)) {
 						const path = `menus/${uploadingData.name}_${idx++}`;
 						await uploadFileData(file, path);
 						uploadingData.imagePaths.push(path);
