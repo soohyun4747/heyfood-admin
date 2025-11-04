@@ -16,13 +16,13 @@ import {
 import { CommonTemplate } from './CommonTemplate';
 
 export interface IReview {
-        id: string;
-        title?: string;
-        name?: string;
-        email: string;
-        comment: string;
-        imagePaths: string[];
-        createdAt: Timestamp;
+	id: string;
+	title?: string;
+	name?: string;
+	email: string;
+	comment: string;
+	imagePaths: string[];
+	createdAt: Timestamp;
 }
 
 const searchFieldOptions = [{ value: 'email', label: '이메일' }];
@@ -172,51 +172,47 @@ export function ReviewsTemplate() {
 		}
 	};
 
-        const columns: ColumnsType<IReview> = [
-                {
-                        title: '리뷰 id',
-                        dataIndex: 'id',
-                },
-                {
-                        title: '제목',
-                        dataIndex: 'title',
-                },
-                {
-                        title: '이름',
-                        dataIndex: 'name',
-                },
-                {
-                        title: '이메일',
-                        dataIndex: 'email',
-                },
-                {
-			title: '내용',
-			dataIndex: 'comment',
+	const columns: ColumnsType<IReview> = [
+		{
+			title: '리뷰 id',
+			dataIndex: 'id',
+		},
+		{
+			title: '제목',
+			dataIndex: 'title',
+		},
+		{
+			title: '이름',
+			dataIndex: 'name',
+		},
+		{
+			title: '이메일',
+			dataIndex: 'email',
 		},
 		{
 			title: '작성일',
 			dataIndex: 'createdAt',
 			render: (value: Timestamp) => value.toDate().toLocaleDateString(),
-                },
-                {
-                        title: '',
-                        fixed: 'right',
-                        width: 70,
-                        render: (value, record) => (
-                                <div
-                                        className='text-blue-600 hover:cursor-pointer'
-                                        onClick={() => {
-                                                setDocId(record.id);
-                                                navigate(pathNames.reviewsDetail);
-                                        }}>
-                                        보기/수정
-                                </div>
-                        ),
-                },
-                {
-                        title: '',
-                        fixed: 'right',
-                        width: 40,
+		},
+		{
+			title: '',
+			fixed: 'right',
+			width: 70,
+			render: (value, record) => (
+				<div
+					className='text-blue-600 hover:cursor-pointer'
+					onClick={() => {
+						setDocId(record.id);
+						navigate(pathNames.reviewsDetail);
+					}}>
+					보기/수정
+				</div>
+			),
+		},
+		{
+			title: '',
+			fixed: 'right',
+			width: 40,
 			render: (value, record) => (
 				<div
 					className='text-red-500 hover:cursor-pointer'
@@ -231,34 +227,34 @@ export function ReviewsTemplate() {
 		<CommonTemplate
 			label={'리뷰관리'}
 			allCnt={total}>
-                        <div className='flex flex-col gap-[12px]'>
-                                <div className='flex items-center justify-between'>
-                                        <div className='flex items-center gap-[8px]'>
-                                                <Select
-                                                        value={searchField}
-                                                        style={{ width: 120 }}
-                                                        options={searchFieldOptions}
-                                                        onChange={onChangeSearchField}
-                                                />
-                                                <Search
-                                                        value={searchValue}
-                                                        placeholder='input search text'
-                                                        allowClear
-                                                        style={{ width: 200 }}
-                                                        onChange={onChangeSearchValue}
-                                                />
-                                        </div>
-                                        <Button
-                                                onClick={() => {
-                                                        setDocId(undefined);
-                                                        navigate(pathNames.reviewsDetail);
-                                                }}
-                                                variant='outlined'
-                                                color='orange'>
-                                                리뷰추가
-                                        </Button>
-                                </div>
-                                <Table<IReview>
+			<div className='flex flex-col gap-[12px]'>
+				<div className='flex items-center justify-between'>
+					<div className='flex items-center gap-[8px]'>
+						<Select
+							value={searchField}
+							style={{ width: 120 }}
+							options={searchFieldOptions}
+							onChange={onChangeSearchField}
+						/>
+						<Search
+							value={searchValue}
+							placeholder='input search text'
+							allowClear
+							style={{ width: 200 }}
+							onChange={onChangeSearchValue}
+						/>
+					</div>
+					<Button
+						onClick={() => {
+							setDocId(undefined);
+							navigate(pathNames.reviewsDetail);
+						}}
+						variant='outlined'
+						color='orange'>
+						리뷰추가
+					</Button>
+				</div>
+				<Table<IReview>
 					size={'small'}
 					className={'hey-table'}
 					columns={columns}
