@@ -17,6 +17,7 @@ import { CommonTemplate } from './CommonTemplate';
 
 export interface IReview {
         id: string;
+        title?: string;
         name?: string;
         email: string;
         comment: string;
@@ -175,6 +176,10 @@ export function ReviewsTemplate() {
                 {
                         title: '리뷰 id',
                         dataIndex: 'id',
+                },
+                {
+                        title: '제목',
+                        dataIndex: 'title',
                 },
                 {
                         title: '이름',

@@ -18,8 +18,17 @@ import { LabelTextField } from 'components/LabelTexfield';
 import { LabelTextArea } from 'components/LabelTextArea';
 import { UploadButton } from 'components/UploadButton';
 
+const htmlBreakRegex = /<br\s*\/?>(\r\n|\r|\n)?/gi;
+
+const convertCommentForTextarea = (comment: string) =>
+        comment.replace(htmlBreakRegex, '\n');
+
+const convertCommentForStorage = (comment: string) =>
+        comment.replace(/\r\n|\r|\n/g, '<br />');
+
 export function ReviewsDetailTemplate() {
         const [data, setData] = useState<IReview>();
+        const [titleInput, setTitleInput] = useState('');
         const [nameInput, setNameInput] = useState('');
         const [emailInput, setEmailInput] = useState('');
         const [commentInput, setCommentInput] = useState('');
@@ -48,9 +57,18 @@ export function ReviewsDetailTemplate() {
                         )) as IReview | undefined;
 
                         if (reviewData) {
+                                const commentForTextarea = convertCommentForTextarea(
+                                        reviewData.comment ?? ''
+                                );
+
+                                setTitleInput(reviewData.title ?? '');
                                 setNameInput(reviewData.name ?? '');
                                 setEmailInput(reviewData.email ?? '');
-                                setCommentInput(reviewData.comment ?? '');
+                                setCommentInput(commentForTextarea);
+                                setData({
+                                        ...reviewData,
+                                        comment: commentForTextarea,
+                                });
 
                                 if (reviewData.imagePaths?.length) {
                                         fetchFileData(reviewData.imagePaths, setFileList);
@@ -62,11 +80,13 @@ export function ReviewsDetailTemplate() {
                                 name: '',
                                 email: '',
                                 comment: '',
+                                title: '',
                                 imagePaths: [],
                                 createdAt: Timestamp.now(),
                         };
 
                         setData(initData);
+                        setTitleInput('');
                         setNameInput('');
                         setEmailInput('');
                         setCommentInput('');
@@ -89,12 +109,18 @@ export function ReviewsDetailTemplate() {
 
                 const uploadingData: IReview = {
                         ...data,
+                        title: titleInput.trim(),
                         name: nameInput.trim(),
                         email: emailInput.trim(),
-                        comment: commentInput,
+                        comment: convertCommentForStorage(commentInput),
                 };
 
-                if (!uploadingData.name || !uploadingData.email || !uploadingData.comment) {
+                if (
+                        !uploadingData.title ||
+                        !uploadingData.name ||
+                        !uploadingData.email ||
+                        !uploadingData.comment
+                ) {
                         message.error('필수 항목을 입력해주세요.');
                         return;
                 }
@@ -137,6 +163,22 @@ export function ReviewsDetailTemplate() {
                 <CommonTemplate label={docId ? '리뷰정보' : '리뷰추가'}>
                         <div className='flex flex-col gap-[18px]'>
                                 <div className='flex flex-col gap-[18px] border-b border-stone-100 pb-[24px]'>
+                                        <LabelTextField
+                                                label='제목'
+                                                value={titleInput}
+                                                onChange={(e) => {
+                                                        const value = e.target.value;
+                                                        setTitleInput(value);
+                                                        setData((prev) =>
+                                                                prev
+                                                                        ? {
+                                                                                  ...prev,
+                                                                                  title: value,
+                                                                          }
+                                                                        : prev
+                                                        );
+                                                }}
+                                        />
                                         <LabelTextField
                                                 label='이름'
                                                 value={nameInput}
